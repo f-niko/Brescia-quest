@@ -6,8 +6,11 @@ let map, userMarker;
 let markersAttivi = []; // Tiene traccia dei PIN visualizzati sulla mappa
 let categoriaCorrente = 'tutti';
 
+// Variabili per l'animazione fluida del GPS
+let posizioneTarget = null;
+let animazioneInCorso = null;
+
 // --- INIZIALIZZAZIONE DEL GIOCO ---
-// Questa funzione viene chiamata in automatico appena superi la schermata di Login
 function initGioco() {
     // Inizializza la mappa globale centrata inizialmente su Via Milano a Brescia
     map = L.map('map').setView([45.5415, 10.2012], 14);
@@ -36,23 +39,21 @@ function aggiornaMappaELista() {
 
     // 3. Cicla sui monumenti di Brescia per inserire solo quelli filtrati
     monumenti.forEach(m => {
-        // Seleziona in base al filtro (o mostra tutto se 'tutti')
         if (categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente) {
             
             // --- AGGIUNGI PIN ALLA MAPPA ---
             const marker = L.marker([m.lat, m.lng]).addTo(map);
             
-            // Se il luogo è scoperto mostra i dettagli, altrimenti lascialo bloccato
             if (m.scoperto) {
                 marker.bindPopup(`<b>✅ ${m.nome}</b><br>${m.desc}`);
             } else {
                 marker.bindPopup(`<b>🔒 Luogo Bloccato</b><br>Avvicinati a meno di 50 metri con il GPS per conquistare questo obiettivo!`);
             }
             
-            markersAttivi.push(marker); // Salva il riferimento per poterlo cancellare al prossimo cambio filtro
-            m.markerRef = marker; // Collega il marker ai dati
+            markersAttivi.push(marker);
+            m.markerRef = marker;
 
-            // --- AGGIUNGI RIGA AL REGISTRO DELLE MISSIONI (HTML) ---
+            // --- AGGIUNGI RIGA AL REGISTRO DELLE MISSIONI ---
             const item = document.createElement('div');
             item.className = `p-3 rounded-xl flex justify-between items-center transition-all ${
                 m.scoperto ? 'bg-green-950/40 border border-green-500' : 'bg-gray-700/50 border border-gray-600'
@@ -72,23 +73,21 @@ function aggiornaMappaELista() {
     });
 }
 
-// Funzione attivata quando clicchi sui pulsanti dei Filtri (Parchi, Spesa, Monumenti)
 function filtraCategoria(categoria) {
     categoriaCorrente = categoria;
     aggiornaMappaELista();
 }
 
-// --- SISTEMA GPS (GEOLOCALIZZAZIONE) ---
+// --- SISTEMA GPS CON MOVIMENTO FLUIDO INIETTATO ---
 function attivaGPS(options) {
     if (navigator.geolocation) {
-        // watchPosition tiene il GPS attivo e rileva se l'utente cammina per Brescia
         navigator.geolocation.watchPosition(
             (position) => {
                 const uLat = position.coords.latitude;
                 const uLng = position.coords.longitude;
 
-                // Crea l'avatar (cerchietto blu) o aggiorna la sua posizione sulla mappa globale
                 if (!userMarker) {
+                    // Primo avvio: crea l'avatar sul punto esatto
                     userMarker = L.circleMarker([uLat, uLng], { 
                         radius: 12, 
                         color: '#ffffff', 
@@ -97,24 +96,56 @@ function attivaGPS(options) {
                         weight: 3
                     }).addTo(map);
                     
-                    // Centra la visuale sul giocatore appena si connette
                     map.setView([uLat, uLng], 16); 
                 } else {
-                    userMarker.setLatLng([uLat, uLng]);
+                    // Spostamenti successivi: attiva l'animazione fluida verso le nuove coordinate
+                    posizioneTarget = { lat: uLat, lng: uLng };
+                    if (!animazioneInCorso) {
+                        animaAvatar();
+                    }
                 }
 
-                // Controlla se l'avatar si è avvicinato ai punti di Brescia
+                // Controlla la prossimità basandosi sulla posizione reale rilevata
                 controllaProssimita(uLat, uLng);
             },
             (error) => { console.warn("Errore ricezione GPS: ", error.message); },
-            { enableHighAccuracy: true } // Forza l'uso del GPS preciso dello smartphone
+            { enableHighAccuracy: true }
         );
     } else {
         alert("Questo telefono o browser non supporta la geolocalizzazione.");
     }
 }
 
-// --- FORMULA HA VERSINE (Calcolo metrico della distanza globale) ---
+// Funzione di interpolazione lineare (Lerp) per muovere il pallino millimetro per millimetro
+function animaAvatar() {
+    if (!posizioneTarget || !userMarker) return;
+
+    const posAttuale = userMarker.getLatLng();
+    
+    // Calcoliamo la differenza tra dove si trova ora e dove deve arrivare
+    const diffLat = posizioneTarget.lat - posAttuale.lat;
+    const diffLng = posizioneTarget.lng - posAttuale.lng;
+
+    // Velocità di scivolamento (0.05 significa che copre il 5% della distanza rimanente ad ogni fotogramma)
+    const fattoreFlidita = 0.05; 
+
+    // Se la distanza è minuscola, saltiamo direttamente al punto d'arrivo e fermiamo l'animazione
+    if (Math.abs(diffLat) < 0.00001 && Math.abs(diffLng) < 0.00001) {
+        userMarker.setLatLng([posizioneTarget.lat, posizioneTarget.lng]);
+        animazioneInCorso = null; // Animazione completata
+    } else {
+        // Altrimenti calcola lo step intermedio
+        const nuovaLat = posAttuale.lat + (diffLat * fattoreFlidita);
+        const nuovaLng = posAttuale.lng + (diffLng * fattoreFlidita);
+        
+        userMarker.setLatLng([nuovaLat, nuovaLng]);
+        
+        // Richiede al browser di eseguire il prossimo fotogramma dell'animazione (circa 60 fps)
+        animazioneInCorso = requestAnimationFrame(animaAvatar);
+    }
+}
+
+// --- FORMULA HA VERSINE ---
 function calcolaDistanza(lat1, lon1, lat2, lon2) {
     const R = 6371e3; // Raggio terrestre in metri
     const phi1 = lat1 * Math.PI / 180;
@@ -127,7 +158,7 @@ function calcolaDistanza(lat1, lon1, lat2, lon2) {
               Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c; // Distanza precisa in metri
+    return R * c; 
 }
 
 // --- MECCANICA DI GIOCO: GEOFENCING E SBLOCCO BADGE ---
@@ -136,9 +167,7 @@ function controllaProssimita(userLat, userLng) {
         if (!m.scoperto) {
             const distanza = calcolaDistanza(userLat, userLng, m.lat, m.lng);
             
-            // Sblocca il Badge se l'utente si trova a meno di 50 metri dal posto
-            // TIP DI TEST: Cambialo in 50000 se vuoi sbloccarli tutti subito mentre testi da PC a casa!
-            if (distanza <= 5000) { 
+            if (distanza <= 50) { 
                 m.scoperto = true;
                 assegnaXP(100);
                 mostraPopupScoperta(m);
@@ -152,14 +181,12 @@ function controllaProssimita(userLat, userLng) {
 function assegnaXP(punti) {
     playerXP += punti;
     
-    // Sistema di Level Up (Ogni 300 punti si sale di livello)
     if (playerXP >= xpPerLivello) {
         playerLevel++;
         playerXP -= xpPerLivello;
         document.getElementById('livello-txt').innerText = playerLevel;
     }
     
-    // Aggiorna la grafica della barra XP nell'interfaccia
     document.getElementById('xp-txt').innerText = playerXP;
     const percentuale = (playerXP / xpPerLivello) * 100;
     document.getElementById('xp-bar').style.width = `${percentuale}%`;
