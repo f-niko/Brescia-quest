@@ -138,7 +138,7 @@ function controllaProssimita(userLat, userLng) {
             
             // Sblocca il Badge se l'utente si trova a meno di 50 metri dal posto
             // TIP DI TEST: Cambialo in 50000 se vuoi sbloccarli tutti subito mentre testi da PC a casa!
-            if (distanza <= 50) { 
+            if (distanza <= 5000) { 
                 m.scoperto = true;
                 assegnaXP(100);
                 mostraPopupScoperta(m);
