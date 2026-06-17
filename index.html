@@ -29,16 +29,13 @@
         👥 <span class="text-xs ml-1 font-bold">Amici</span>
     </button>
 
-    <div id="wishlist-sidebar" onclick="event.stopPropagation()" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full">
+    <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full">
         
-        <div class="flex flex-col mb-6 mt-4 gap-4">
-            <div class="flex justify-start">
-                <button onclick="event.stopPropagation(); toggleWishlist();" class="bg-gray-800 hover:bg-gray-700 text-yellow-400 hover:text-yellow-300 font-bold w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-colors cursor-pointer border border-gray-700">
-                    ✕
-                </button>
-            </div>
-            
-            <h2 class="text-xl font-bold text-yellow-400">⚔️ La mia Wishlist</h2>
+        <div class="flex flex-col gap-4 mb-6 mt-2">
+            <button onclick="toggleWishlist()" class="w-full bg-gray-800 hover:bg-gray-700 text-yellow-400 font-bold py-2 px-4 rounded-xl text-xs transition-colors cursor-pointer border border-gray-700 tracking-wider">
+                ✕ CHIUDI ELENCO
+            </button>
+            <h2 class="text-xl font-bold text-yellow-400 mt-2">⚔️ La mia Wishlist</h2>
         </div>
 
         <div id="lista-monumenti" class="space-y-3"></div>
