@@ -6,3 +6,5 @@ Tramite un sistema di gamification, le località della città diventano degli ob
 La web app è disponibile sia da PC che da dispositivo mobile, utlizzando la localizzazione per determinare la posizione dell'utente.
 Una volta dentro, saranno rivelate tutte le mete disponibili da poter raggiungere. Tuttavia, la loro descrizione rimarrà nascosta.
 Per sbloccarla, sarà necessario raggiungere la destiniazione stessa.
+
+Realizzato come progetto di Stage scolastico.
