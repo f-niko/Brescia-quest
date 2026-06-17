@@ -5,7 +5,11 @@ const xpPerLivello = 300;
 let map, userMarker;
 let markersAttivi = []; 
 let categoriaCorrente = 'tutti';
-let ultimaPosizioneUtente = null; 
+
+// Variabili per l'animazione fluida del GPS
+let posizioneTarget = null;
+let animazioneInCorso = null;
+let primoAvvioGps = true; // Impedisce ai popup a catena di saltare fuori al primissimo avvio
 
 // --- INIZIALIZZAZIONE DEL GIOCO ---
 function initGioco() {
@@ -16,7 +20,8 @@ function initGioco() {
     }).addTo(map);
 
     aggiornaMappaELista();
-    attivaGPS();
+
+    attivaGPS({ enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
 }
 
 // --- GESTIONE DEI FILTRI E DEI PIN ---
@@ -41,15 +46,6 @@ function aggiornaMappaELista() {
             markersAttivi.push(marker);
             m.markerRef = marker;
 
-            // Calcolo dinamico della distanza da mostrare nella Wishlist Sidebar
-            let testoDistanza = '🔒 Distanza: Calcolo in corso...';
-            if (!m.scoperto && ultimaPosizioneUtente) {
-                const d = calcolaDistanza(ultimaPosizioneUtente.lat, ultimaPosizioneUtente.lng, m.lat, m.lng);
-                testoDistanza = d >= 1000 ? `📍 Distanza: ${(d/1000).toFixed(1)} km` : `📍 Distanza: ${Math.round(d)} metri`;
-            } else if (m.scoperto) {
-                testoDistanza = '🟢 Obiettivo Conquistato';
-            }
-
             const item = document.createElement('div');
             item.className = `p-3 rounded-xl flex justify-between items-center transition-all ${
                 m.scoperto ? 'bg-green-950/40 border border-green-500' : 'bg-gray-700/50 border border-gray-600'
@@ -58,7 +54,7 @@ function aggiornaMappaELista() {
             item.innerHTML = `
                 <div>
                     <p class="font-semibold text-sm ${m.scoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
-                    <p class="text-xs text-gray-400 font-mono">${testoDistanza}</p>
+                    <p class="text-xs text-gray-400 font-mono">${m.scoperto ? '🟢 Obiettivo Conquistato' : '🔒 Distanza: Calcolo in corso...'}</p>
                 </div>
                 <div class="text-sm font-mono text-gray-400 bg-gray-800 px-2 py-1 rounded-md">
                     ${m.scoperto ? '🏆' : '+100 XP'}
@@ -74,15 +70,13 @@ function filtraCategoria(categoria) {
     aggiornaMappaELista();
 }
 
-// --- SISTEMA GPS ---
-function attivaGPS() {
+// --- SISTEMA GPS CON MOVIMENTO FLUIDO INIETTATO ---
+function attivaGPS(options) {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(
             (position) => {
                 const uLat = position.coords.latitude;
                 const uLng = position.coords.longitude;
-
-                ultimaPosizioneUtente = { lat: uLat, lng: uLng };
 
                 if (!userMarker) {
                     userMarker = L.circleMarker([uLat, uLng], { 
@@ -95,16 +89,44 @@ function attivaGPS() {
                     
                     map.setView([uLat, uLng], 16); 
                 } else {
-                    userMarker.setLatLng([uLat, uLng]);
+                    posizioneTarget = { lat: uLat, lng: uLng };
+                    if (!animazioneInCorso) {
+                        animaAvatar();
+                    }
                 }
 
                 controllaProssimita(uLat, uLng);
+                
+                // Dopo il primo controllo della posizione, disattiviamo il blocco dei popup
+                primoAvvioGps = false; 
             },
             (error) => { console.warn("Errore ricezione GPS: ", error.message); },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+            { enableHighAccuracy: true }
         );
     } else {
         alert("Questo telefono o browser non supporta la geolocalizzazione.");
+    }
+}
+
+function animaAvatar() {
+    if (!posizioneTarget || !userMarker) return;
+
+    const posAttuale = userMarker.getLatLng();
+    
+    const diffLat = posizioneTarget.lat - posAttuale.lat;
+    const diffLng = posizioneTarget.lng - posAttuale.lng;
+
+    const fattoreFlidita = 0.05; 
+
+    if (Math.abs(diffLat) < 0.00001 && Math.abs(diffLng) < 0.00001) {
+        userMarker.setLatLng([posizioneTarget.lat, posizioneTarget.lng]);
+        animazioneInCorso = null; 
+    } else {
+        const nuovaLat = posAttuale.lat + (diffLat * fattoreFlidita);
+        const nuovaLng = posAttuale.lng + (diffLng * fattoreFlidita);
+        
+        userMarker.setLatLng([nuovaLat, nuovaLng]);
+        animazioneInCorso = requestAnimationFrame(animaAvatar);
     }
 }
 
@@ -124,25 +146,28 @@ function calcolaDistanza(lat1, lon1, lat2, lon2) {
     return R * c; 
 }
 
-// --- MECCANICA DI GIOCO CON AGGIORNAMENTO CLOUD ---
+// --- MECCANICA DI GIOCO SBLOCCO REGISTRATO SU CLOUD ---
 function controllaProssimita(userLat, userLng) {
     monumenti.forEach(m => {
         if (!m.scoperto) {
             const distanza = calcolaDistanza(userLat, userLng, m.lat, m.lng);
             
-            // Raggio di test impostato a 50km come nel tuo codice base per sbloccarli subito da casa
+            // Rimesso a 50km come volevi per i tuoi test rapidi!
             if (distanza <= 50000) { 
                 m.scoperto = true;
-                assegnaXP(100); 
-                mostraPopupScoperta(m);
+                assegnaXP(100);
+                
+                // Mostra il popup grafico solo se NON siamo al primissimo caricamento silente
+                if (!primoAvvioGps) {
+                    mostraPopupScoperta(m);
+                }
             }
         }
     });
-
     aggiornaMappaELista();
 }
 
-// --- ASSEGNAZIONE PUNTI E INVIO DATI A FIREBASE ---
+// --- ASSEGNAZIONE PUNTEGGIO E LIVELLI CON INVIO A FIREBASE ---
 function assegnaXP(punti) {
     playerXP += punti;
     
@@ -156,7 +181,7 @@ function assegnaXP(punti) {
     const percentuale = (playerXP / xpPerLivello) * 100;
     document.getElementById('xp-bar').style.width = `${percentuale}%`;
 
-    // Sincronizza i dati in tempo reale chiamando la funzione dell'index
+    // ☁️ Salva i nuovi progressi su Firebase in tempo reale!
     if (typeof window.salvaProgressoSuCloud === 'function') {
         window.salvaProgressoSuCloud(playerXP, playerLevel, monumenti);
     }
