@@ -25,7 +25,7 @@ function toggleAmici() {
 
 // --- INIZIALIZZAZIONE DEL GIOCO ---
 function initGioco() {
-    // CONTROLlO DI SICUREZZA: Se la mappa è già stata creata, si ferma ed evita l'errore!
+    // CONTROLLO DI SICUREZZA: Se la mappa è già stata creata, si ferma ed evita l'errore!
     if (map) {
         console.log("Mappa già inizializzata. Salto la ricreazione.");
         aggiornaMappaELista();
@@ -139,9 +139,13 @@ function filtraCategoria(categoria) {
     const classiContorno = ['outline-3', 'outline-yellow-400'];
     const pulsanti = document.querySelectorAll('#filtri-nav button');
     
+    // Rimuove il contorno da tutti i pulsanti della navbar per resettarli
     pulsanti.forEach(btn => btn.classList.remove(...classiContorno));
 
-    const pulsanteAttivo = document.getElementById(`btn-filtro-${categoria}`);
+    // CORREZIONE INTELLIGENTE: Se i bottoni non hanno un ID esatto, trova quello col comando associato
+    const pulsanteAttivo = document.getElementById(`btn-filtro-${categoria}`) || 
+                           Array.from(pulsanti).find(btn => btn.getAttribute('onclick')?.includes(`'${categoria}'`));
+                           
     if (pulsanteAttivo) {
         pulsanteAttivo.classList.add(...classiContorno);
     }
@@ -196,7 +200,7 @@ function animaAvatar() {
     const fattoreFluidita = 0.05;
 
     if (Math.abs(diffLat) < 0.000001 && Math.abs(diffLng) < 0.000001) {
-        userMarker.setLatLng([posizioneTarget.lat, posizioneTarget.lng]);
+        userMarker.setLatLng([posizioneTarget.lat, ULng]);
         animazioneInCorso = null;
     } else {
         const nuovaLat = posAttuale.lat + (diffLat * fattoreFluidita);
@@ -226,6 +230,8 @@ function calcolaDistanza(lat1, lon1, lat2, lon2) {
 // --- LOGICA DI GIOCO: CONTROLLO VICINANZA E SBLOCCO ---
 function controllaProssimita(uLat, uLng) {
     if (typeof monumenti === 'undefined') return;
+
+    document.title = "Brescia Quest - Il Gioco Esplorativo"; // Assicura stabilità titolo
 
     monumenti.forEach(m => {
         const distanza = calcolaDistanza(uLat, uLng, m.lat, m.lng);
