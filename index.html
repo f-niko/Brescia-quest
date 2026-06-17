@@ -228,7 +228,7 @@
     <script>
         function toggleWishlist() {
             const sidebar = document.getElementById('wishlist-sidebar');
-            sidebar.classList.toggle('translate-x-full');
+            if (sidebar) sidebar.classList.toggle('translate-x-full');
         }
         function apriPopupAmici() {
             document.getElementById('popup-amici').classList.remove('hidden');
