@@ -64,14 +64,29 @@ function aggiornaMappaELista() {
 
 function aggiornaWishlist() {
     const lista = document.getElementById('lista-monumenti');
-    if (!lista || typeof monumenti === 'undefined') return;
+    if (!lista) return;
+    
+    // Controllo di sicurezza se l'array monumenti non esiste ancora al caricamento
+    if (typeof monumenti === 'undefined') {
+        lista.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>Caricamento luoghi in corso...</p>";
+        return;
+    }
+    
+    // Filtriamo i luoghi non ancora scoperti
+    const daScoprire = monumenti.filter(m => !m.scoperto);
+    
+    // Se la lista è vuota perché l'utente ha visitato tutto
+    if (daScoprire.length === 0) {
+        lista.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
+        return;
+    }
     
     lista.innerHTML = ""; 
-    monumenti.filter(m => !m.scoperto).forEach(m => {
+    daScoprire.forEach(m => {
         const div = document.createElement('div');
-        div.className = "bg-gray-800 p-3 rounded-lg border border-gray-700";
-        div.innerHTML = `<div class="font-bold text-yellow-400">${m.nome}</div>
-                         <div class="text-[10px] text-gray-400">${m.desc}</div>`;
+        div.className = "bg-gray-800 p-3 rounded-lg border border-gray-700 shadow-md";
+        div.innerHTML = `<div class="font-bold text-yellow-400 text-sm">${m.nome}</div>
+                         <div class="text-[10px] text-gray-400 mt-1">${m.desc}</div>`;
         lista.appendChild(div);
     });
 }
@@ -131,6 +146,8 @@ function assegnaXP(punti) {
 }
 
 function controllaProssimita(lat, lng) {
+    if (typeof monumenti === 'undefined') return;
+
     monumenti.forEach(m => {
         if (!m.scoperto && calcolaDistanza(lat, lng, m.lat, m.lng) <= 50) {
             m.scoperto = true;
@@ -141,7 +158,9 @@ function controllaProssimita(lat, lng) {
     
     aggiornaMappaELista();
 
-    if (codaPopup.length > 0 && !document.getElementById('popup-scoperta').classList.contains('hidden') === false) {
+    // CORRETTO: Verifica lineare se c'è un popup in coda e se l'interfaccia del popup è attualmente nascosta
+    const popupElement = document.getElementById('popup-scoperta');
+    if (codaPopup.length > 0 && popupElement && popupElement.classList.contains('hidden')) {
         mostraPopupScoperta(codaPopup[0]);
     }
 }
@@ -155,13 +174,27 @@ function calcolaDistanza(lat1, lon1, lat2, lon2) {
 }
 
 function mostraPopupScoperta(m) {
-    document.getElementById('popup-nome').innerText = m.nome;
-    document.getElementById('popup-desc').innerText = m.desc;
-    document.getElementById('popup-scoperta').classList.remove('hidden');
+    const nomeEl = document.getElementById('popup-nome');
+    const descEl = document.getElementById('popup-desc');
+    const popupEl = document.getElementById('popup-scoperta');
+
+    if (nomeEl) nomeEl.innerText = m.nome;
+    if (descEl) descEl.innerText = m.desc;
+    if (popupEl) popupEl.classList.remove('hidden');
 }
 
 function chiudiPopup() {
-    document.getElementById('popup-scoperta').classList.add('hidden');
+    const popupEl = document.getElementById('popup-scoperta');
+    if (popupEl) popupEl.classList.add('hidden');
+    
     codaPopup.shift();
-    if (codaPopup.length > 0) setTimeout(() => mostraPopupScoperta(codaPopup[0]), 200);
+    if (codaPopup.length > 0) {
+        setTimeout(() => mostraPopupScoperta(codaPopup[0]), 200);
+    }
+}
+
+// Funzione globale per gestire il cambio di filtri categoria (invocata dalla navbar)
+window.filtraCategoria = function(categoria) {
+    categoriaCorrente = categoria;
+    aggiornaMappaELista();
 }
