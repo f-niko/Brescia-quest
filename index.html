@@ -10,10 +10,7 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
     <style>
-        /* La mappa occupa tutto lo spazio rimanente sotto l'header e i filtri */
         #map { flex-grow: 1; width: 100%; z-index: 1; }
-
-        /* GERARCHIA LIVELLI (Z-INDEX) */
         header { position: relative; z-index: 99999 !important; }
         #popup-scoperta, #popup-profilo, #popup-amici { z-index: 100000 !important; }
         #wishlist-sidebar { z-index: 90000 !important; }
@@ -30,10 +27,10 @@
         👥 <span class="text-xs ml-1 font-bold">Amici</span>
     </button>
 
-    <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full">
+    <div id="wishlist-sidebar" onclick="event.stopPropagation()" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full">
         <div class="flex justify-between items-center mb-6 mt-4">
             <h2 class="text-xl font-bold text-yellow-400">⚔️ La mia Wishlist</h2>
-            <button onclick="toggleWishlist()" class="bg-gray-850 hover:bg-gray-800 text-yellow-400 hover:text-yellow-300 font-bold w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-colors cursor-pointer border border-gray-700">
+            <button onclick="toggleWishlist(); event.stopPropagation();" class="bg-gray-800 hover:bg-gray-700 text-yellow-400 hover:text-yellow-300 font-bold w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-colors cursor-pointer border border-gray-700">
                 ✕
             </button>
         </div>
@@ -272,6 +269,14 @@
         let datiUtenteLocale = null;
         let isAuthProcessing = false;
 
+        // MAPPA STRUTTURALE COMPLETA DEI POI PER EVITARE DATABASE VUOTI ALLA REGISTRAZIONE
+        const listaMonumentiInizialeDefinita = [
+            { nome: "Piazza della Loggia", scoperto: false },
+            { nome: "Piazza della Vittoria", scoperto: false },
+            { nome: "Castello di Brescia", scoperto: false },
+            { nome: "Capitolium (Tempio Capitolino)", scoperto: false }
+        ];
+
         window.switchAuthTab = function(tab) {
             const formAccedi = document.getElementById('form-accedi');
             const formRegistrati = document.getElementById('form-registrati');
@@ -304,7 +309,7 @@
                 const user = userCredential.user;
 
                 if (!user.emailVerified) {
-                    alert("⚠️ Il tuo indirizzo email non è ancora stato verificato! Controlla la tua casella di posta elettronica.");
+                    alert("⚠️ Verifica la tua mail prima di entrare!");
                     await auth.signOut();
                     isAuthProcessing = false;
                     return;
@@ -312,7 +317,7 @@
 
                 await caricaEAvviaGioco(user);
             } catch (error) {
-                alert("❌ Errore d'accesso: Credenziali errate o non valide. " + error.message);
+                alert("❌ Credenziali non valide: " + error.message);
                 isAuthProcessing = false;
             }
         }
@@ -333,7 +338,12 @@
 
                 await sendEmailVerification(user);
 
-                const statoMonumenti = (typeof monumenti !== 'undefined') ? monumenti.map(m => ({ nome: m.nome, scoperto: false })) : [];
+                // Configurazione iniziale robusta basata sulla costante locale definita sopra
+                let statoMonumenti = [...listaMonumentiInizialeDefinita];
+                if (typeof monumenti !== 'undefined' && monumenti.length > 0) {
+                    statoMonumenti = monumenti.map(m => ({ nome: m.nome, scoperto: false }));
+                }
+
                 await setDoc(doc(db, "utenti", user.uid), {
                     nome: nome,
                     genere: genere,
@@ -345,11 +355,11 @@
                     ultimoAccesso: new Date().toISOString()
                 });
 
-                alert("📧 Ti abbiamo inviato una mail di conferma! Clicca sul link ricevuto per attivare il tuo account e poi effettua l'accesso.");
+                alert("📧 Mail di attivazione inviata! Controlla la tua posta.");
                 await auth.signOut();
                 window.location.reload();
             } catch (error) {
-                alert("❌ Errore durante la registrazione: " + error.message);
+                alert("❌ Errore di registrazione: " + error.message);
                 isAuthProcessing = false;
             }
         }
@@ -367,13 +377,12 @@
         window.gestisciRecupero = async function(event) {
             event.preventDefault();
             const email = document.getElementById('recupero-email').value.trim();
-
             try {
                 await sendPasswordResetEmail(auth, email);
-                alert("📨 Email di ripristino inviata con successo! Segui le istruzioni ricevute via email per impostare una nuova password.");
+                alert("📨 Link di recupero inviato!");
                 tornaAlLogin();
             } catch (error) {
-                alert("❌ Impossibile inoltrare la richiesta di ripristino: " + error.message);
+                alert("❌ Errore: " + error.message);
             }
         }
 
@@ -382,20 +391,23 @@
             localStorage.setItem('giocatoreEmail', user.email);
             document.getElementById('mio-codice-txt').innerText = user.uid;
 
-            const timestampCorrente = new Date().toISOString();
             const userRef = doc(db, "utenti", user.uid);
             const docSnap = await getDoc(userRef);
 
             if (docSnap.exists()) {
                 await updateDoc(userRef, {
                     status: "online",
-                    ultimoAccesso: timestampCorrente
+                    ultimoAccesso: new Date().toISOString()
                 });
                 datiUtenteLocale = docSnap.data();
                 datiUtenteLocale.amici = datiUtenteLocale.amici || [];
                 window.entraNelGioco(datiUtenteLocale.nome, datiUtenteLocale.genere, datiUtenteLocale.xp, datiUtenteLocale.livello, datiUtenteLocale.monumenti);
             } else {
-                const statoMonumenti = (typeof monumenti !== 'undefined') ? monumenti.map(m => ({ nome: m.nome, scoperto: false })) : [];
+                let statoMonumenti = [...listaMonumentiInizialeDefinita];
+                if (typeof monumenti !== 'undefined' && monumenti.length > 0) {
+                    statoMonumenti = monumenti.map(m => ({ nome: m.nome, scoperto: false }));
+                }
+
                 datiUtenteLocale = {
                     nome: "Esploratore",
                     genere: "Esploratore",
@@ -404,7 +416,7 @@
                     monumenti: statoMonumenti,
                     amici: [],
                     status: "online",
-                    ultimoAccesso: timestampCorrente
+                    ultimoAccesso: new Date().toISOString()
                 };
                 await setDoc(userRef, datiUtenteLocale);
                 window.entraNelGioco("Esploratore", "Esploratore", 0, 1, statoMonumenti);
@@ -414,13 +426,8 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             auth.onAuthStateChanged(async (user) => {
-                if (user) {
-                    if (user.emailVerified) {
-                        caricaEAvviaGioco(user);
-                    } else {
-                        await signOut(auth);
-                        document.getElementById('schermata-login').classList.remove('hidden');
-                    }
+                if (user && user.emailVerified) {
+                    caricaEAvviaGioco(user);
                 } else {
                     document.getElementById('schermata-login').classList.remove('hidden');
                 }
@@ -436,9 +443,7 @@
             document.getElementById('avatar-icon').innerText = (genere === "Esploratore") ? "🧑‍🚀" : "👩‍🚀";
             document.getElementById('livello-txt').innerText = livello;
             document.getElementById('xp-txt').innerText = xp;
-
-            const percentuale = (xp / 300) * 100;
-            document.getElementById('xp-bar').style.width = `${percentuale}%`;
+            document.getElementById('xp-bar').style.width = `${(xp / 300) * 100}%`;
 
             if (typeof playerXP !== 'undefined') playerXP = xp;
             if (typeof playerLevel !== 'undefined') playerLevel = livello;
@@ -453,198 +458,105 @@
             document.getElementById('btn-wishlist').classList.remove('hidden');
             document.getElementById('btn-amici').classList.remove('hidden');
 
-            if (typeof initGioco === 'function') {
-                initGioco();
-            }
+            if (typeof initGioco === 'function') initGioco();
         }
 
         window.eseguiLogout = async function() {
-            if (!confirm("Vuoi davvero uscire dal gioco?")) return;
+            if (!confirm("Vuoi uscire?")) return;
             try {
-                if (utenteCorrenteId) {
-                    await updateDoc(doc(db, "utenti", utenteCorrenteId), { status: "offline" });
-                }
+                if (utenteCorrenteId) await updateDoc(doc(db, "utenti", utenteCorrenteId), { status: "offline" });
                 await signOut(auth);
                 window.location.reload();
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         window.salvaModificheProfilo = async function() {
             const nuovoNome = document.getElementById('edit-nome').value.trim();
             const nuovoGenere = document.getElementById('edit-genere').value;
             if (!nuovoNome) return;
-
             try {
-                await updateDoc(doc(db, "utenti", utenteCorrenteId), {
-                    nome: nuovoNome,
-                    genere: nuovoGenere
-                });
-                alert("✨ Profilo aggiornato con successo!");
-                chiudiPopupProfilo();
+                await updateDoc(doc(db, "utenti", utenteCorrenteId), { nome: nuovoNome, genere: nuovoGenere });
+                alert("Profilo aggiornato!");
                 window.location.reload();
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         window.salvaProgressoSuCloud = async function(xp, livello, listaMonumenti) {
             if (!utenteCorrenteId) return;
             try {
                 const statoMonumenti = listaMonumenti.map(m => ({ nome: m.nome, scoperto: m.scoperto || false }));
-                await updateDoc(doc(db, "utenti", utenteCorrenteId), {
-                    xp: xp,
-                    livello: livello,
-                    monumenti: statoMonumenti
-                });
-            } catch (e) {
-                console.error("Errore salvataggio cloud: ", e);
-            }
+                await updateDoc(doc(db, "utenti", utenteCorrenteId), { xp: xp, livello: livello, monumenti: statoMonumenti });
+            } catch (e) { console.error(e); }
         }
 
         window.copiaCodiceAmico = function() {
-            if (!utenteCorrenteId) return;
             navigator.clipboard.writeText(utenteCorrenteId);
-            alert("📋 Codice copiato negli appunti! Invialo ai tuoi amici.");
-        }
-
-        window.condividiCodiceAmico = function() {
-            if (!utenteCorrenteId) return;
-            const testoCondivisione = `Unisciti alla mia squadra su Brescia Quest!\n🎮 Usa il mio Codice Squadra per scalare la classifica insieme: ${utenteCorrenteId}`;
-
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Brescia Quest',
-                    text: testoCondivisione
-                }).catch(console.error);
-            } else {
-                navigator.clipboard.writeText(testoCondivisione);
-                alert("🔗 Link stile Monopoly GO generato e copiato! Incollalo dove vuoi per condividerlo.");
-            }
+            alert("Codice copiato!");
         }
 
         window.aggiungiAmico = async function() {
             const codiceAmico = document.getElementById('input-codice-amico').value.trim();
-            if (!codiceAmico) return;
-            if (codiceAmico === utenteCorrenteId) {
-                alert("❌ Non puoi aggiungere te stesso come amico!");
-                return;
-            }
-
+            if (!codiceAmico || codiceAmico === utenteCorrenteId) return;
             try {
                 const amicoSnap = await getDoc(doc(db, "utenti", codiceAmico));
-                if (!amicoSnap.exists()) {
-                    alert("❌ Nessun giocatore trovato con questo codice. Controlla e riprova.");
-                    return;
-                }
-
+                if (!amicoSnap.exists()) { alert("Giocatore non trovato!"); return; }
                 await updateDoc(doc(db, "utenti", utenteCorrenteId), { amici: arrayUnion(codiceAmico) });
                 await updateDoc(doc(db, "utenti", codiceAmico), { amici: arrayUnion(utenteCorrenteId) });
-
-                alert(`🤝 Compagno aggiunto con successo!`);
-                document.getElementById('input-codice-amico').value = "";
+                alert("Amico aggiunto!");
                 window.aggiornaElencoClassificaAmici();
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // Rimosso lo spazio vuoto errato dentro la stringa di rimozione ID amico
         window.rimuoviAmico = async function(idAmico) {
-            if (!confirm("Sei sicuro di voler rimuovere questo amico dalla tua classifica?")) return;
+            if (!confirm("Rimuovere amico?")) return;
             try {
                 const idPulito = idAmico.trim();
                 await updateDoc(doc(db, "utenti", utenteCorrenteId), { amici: arrayRemove(idPulito) });
                 await updateDoc(doc(db, "utenti", idPulito), { amici: arrayRemove(utenteCorrenteId) });
                 window.aggiornaElencoClassificaAmici();
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
         window.aggiornaElencoClassificaAmici = async function() {
             const container = document.getElementById('lista-amici-classifica');
             if (!container || !utenteCorrenteId) return;
-            container.innerHTML = "<p class='text-gray-400 animate-pulse text-center py-4'>Sincronizzazione punteggi...</p>";
-
             try {
                 const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
-                if (!mioSnap.exists()) return;
                 const mieiDati = mioSnap.data();
                 const listaIdAmici = mieiDati.amici || [];
 
-                let partecipanti = [];
-                partecipanti.push({
-                    id: utenteCorrenteId,
-                    nome: mieiDati.nome + " (Tu)",
-                    livello: mieiDati.livello,
-                    xp: mieiDati.xp,
-                    status: "online",
-                    ultimoAccesso: mieiDati.ultimoAccesso
-                });
+                let partecipanti = [{ id: utenteCorrenteId, nome: mieiDati.nome + " (Tu)", livello: mieiDati.livello, xp: mieiDati.xp, status: "online", ultimoAccesso: mieiDati.ultimoAccesso }];
 
                 for (let idAmico of listaIdAmici) {
                     const snapAmico = await getDoc(doc(db, "utenti", idAmico));
                     if (snapAmico.exists()) {
                         const dAmico = snapAmico.data();
-                        partecipanti.push({
-                            id: idAmico,
-                            nome: dAmico.nome,
-                            livello: dAmico.livello,
-                            xp: dAmico.xp,
-                            status: dAmico.status || "offline",
-                            ultimoAccesso: dAmico.ultimoAccesso
-                        });
+                        partecipanti.push({ id: idAmico, nome: dAmico.nome, livello: dAmico.livello, xp: dAmico.xp, status: dAmico.status || "offline", ultimoAccesso: dAmico.ultimoAccesso });
                     }
                 }
 
-                partecipanti.sort((a, b) => {
-                    if (b.livello !== a.livello) return b.livello - a.livello;
-                    return b.xp - a.xp;
-                });
-
+                partecipanti.sort((a, b) => b.livello !== a.livello ? b.livello - a.livello : b.xp - a.xp);
                 container.innerHTML = "";
                 partecipanti.forEach((p, index) => {
-                    let dataTxt = "Mai";
-                    if (p.ultimoAccesso) {
-                        const d = new Date(p.ultimoAccesso);
-                        dataTxt = d.toLocaleDateString() + " " + d.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                    }
-
                     const isMe = p.id === utenteCorrenteId;
-                    const badgePiazzamento = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
-
                     const riga = document.createElement('div');
                     riga.className = `p-3 rounded-xl flex justify-between items-center border ${isMe ? 'bg-yellow-950/30 border-yellow-500/70' : 'bg-gray-700/40 border-gray-700'}`;
-
                     riga.innerHTML = `
                         <div class="flex items-center gap-2">
-                            <span class="font-mono font-bold text-sm text-gray-400 w-5">${badgePiazzamento}</span>
+                            <span class="font-mono font-bold text-gray-400 w-5">${index + 1}.</span>
                             <div>
-                                <div class="font-bold flex items-center gap-1.5">
-                                    ${p.nome}
-                                    <span class="w-2 h-2 rounded-full ${p.status === 'online' ? 'bg-green-500' : 'bg-gray-500'}"></span>
-                                </div>
-                                <div class="text-[10px] text-gray-400">Accesso: ${dataTxt}</div>
+                                <div class="font-bold flex items-center gap-1.5">${p.nome} <span class="w-2 h-2 rounded-full ${p.status === 'online' ? 'bg-green-500' : 'bg-gray-500'}"></span></div>
                             </div>
                         </div>
                         <div class="flex items-center gap-3">
-                            <div class="text-right">
-                                <span class="text-xs font-bold text-green-400 block">Lvl ${p.livello}</span>
-                                <span class="text-[10px] text-gray-400">${p.xp} XP</span>
-                            </div>
-                            ${!isMe ? `<button onclick="rimuoviAmico('${p.id}')" class="text-red-400 hover:text-red-500 text-sm p-1 cursor-pointer">✕</button>` : ''}
-                        </div>
-                    `;
+                            <div class="text-right"><span class="text-xs font-bold text-green-400 block">Lvl ${p.livello}</span></div>
+                            ${!isMe ? `<button onclick="rimuoviAmico('${p.id}')" class="text-red-400 text-sm p-1 cursor-pointer">✕</button>` : ''}
+                        </div>`;
                     container.appendChild(riga);
                 });
-            } catch (e) {
-                console.error(e);
-            }
+            } catch (e) { console.error(e); }
         }
 
-        // Rendiamo disponibili le funzioni del modulo Firebase allo scope globale dell'applicazione
         window.salvaProgressoSuCloud = salvaProgressoSuCloud;
     </script>
 </body>
