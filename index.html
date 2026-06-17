@@ -21,7 +21,7 @@
 </head>
 <body class="bg-gray-900 text-white font-sans flex flex-col h-screen overflow-hidden">
 
-    <button id="btn-wishlist" onclick="toggleWishlist()" class="hidden fixed bottom-6 right-6 md:bottom-auto md:top-36 md:right-6 bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold p-4 rounded-full shadow-2xl transition-all cursor-pointer text-xl flex items-center justify-center">
+    <button id="btn-wishlist" onclick="toggleWishlist()" class="fixed bottom-6 right-6 md:bottom-auto md:top-36 md:right-6 bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold p-4 rounded-full shadow-2xl transition-all cursor-pointer text-xl flex items-center justify-center">
         📋 <span class="text-xs ml-1 font-bold">Wishlist</span>
     </button>
 
@@ -39,7 +39,7 @@
             <h2 class="text-2xl font-bold text-yellow-400 mt-2">BRESCIA QUEST</h2>
             <p class="text-gray-400 text-xs mb-6">Crea il tuo Avatar e inizia l'avventura</p>
             
-            <form id="form-login" class="text-left space-y-4">
+            <form id="form-login" onsubmit="gestisciLogin(event)" class="text-left space-y-4">
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
                     <input type="email" id="login-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
@@ -125,6 +125,19 @@
 
     <main id="map"></main>
 
+    <div id="popup-scoperta" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full text-center border-2 border-yellow-400 shadow-2xl">
+            <span class="text-5xl">🏆</span>
+            <h3 class="text-2xl font-bold text-yellow-400 mt-2">BADGE SBLOCCATO!</h3>
+            <p id="popup-nome" class="text-xl font-semibold mt-1">Nome Posto</p>
+            <p id="popup-desc" class="text-gray-300 text-sm mt-3 px-2"></p>
+            <div class="mt-4 text-green-400 font-bold font-mono text-lg">+100 XP GUADAGNATI!</div>
+            <button onclick="chiudiPopup()" class="mt-5 w-full bg-yellow-500 text-gray-950 font-bold py-2 rounded-xl cursor-pointer hover:bg-yellow-400">
+                Continua la Caccia
+            </button>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="monumenti.js"></script>
     <script src="app.js"></script>
@@ -134,7 +147,6 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // Connessione ufficiale al tuo database di Brescia Quest 
         const firebaseConfig = {
             apiKey: "AIzaSyDJeMeCgX5MfwWH8Dyok44d7XKacLGFiBc",
             authDomain: "brescia-quest-1ddda.firebaseapp.com",
@@ -144,14 +156,13 @@
             appId: "1:57771185253:web:92273ba5ed320363a0228c"
         };
 
-        // Inizializzazione pulita (una sola volta!)
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
 
         let utenteCorrenteId = null;
 
-        async function gestisciLogin(event) {
+        window.gestisciLogin = async function(event) {
             event.preventDefault();
             
             const email = document.getElementById('login-email').value.trim();
@@ -163,6 +174,7 @@
                 const userCredential = await createUserWithEmailAndPassword(auth, email, passwordTemporanea);
                 const user = userCredential.user;
                 utenteCorrenteId = user.uid;
+                localStorage.setItem('giocatoreEmail', email);
 
                 const statoMonumenti = monumenti.map(m => ({ nome: m.nome, scoperto: false }));
 
@@ -183,6 +195,7 @@
                         const userCredential = await signInWithEmailAndPassword(auth, email, passwordTemporanea);
                         const user = userCredential.user;
                         utenteCorrenteId = user.uid;
+                        localStorage.setItem('giocatoreEmail', email);
 
                         const docSnap = await getDoc(doc(db, "utenti", user.uid));
                         if (docSnap.exists()) {
@@ -201,7 +214,6 @@
 
         function entraNelGioco(nome, genere, xp, livello, datiMonumenti) {
             document.getElementById('schermata-login').classList.add('hidden');
-            document.getElementById('btn-wishlist').classList.remove('hidden');
             
             document.getElementById('player-display-name').innerText = nome;
             document.getElementById('player-display-role').innerText = genere;
@@ -242,7 +254,19 @@
             }
         }
 
-        document.getElementById('form-login').addEventListener('submit', gestisciLogin);
+        // Auto-login al boot se la sessione Firebase è attiva o se abbiamo l'email salvata
+        window.addEventListener('DOMContentLoaded', () => {
+            auth.onAuthStateChanged(async (user) => {
+                if (user) {
+                    utenteCorrenteId = user.uid;
+                    const docSnap = await getDoc(doc(db, "utenti", user.uid));
+                    if (docSnap.exists()) {
+                        const datiSito = docSnap.data();
+                        entraNelGioco(datiSito.nome, datiSito.genere, datiSito.xp, datiSito.livello, datiSito.monumenti);
+                    }
+                }
+            });
+        });
 
         window.toggleWishlist = function() {
             const sidebar = document.getElementById('wishlist-sidebar');
@@ -284,6 +308,7 @@
 
         window.eseguiLogout = function() {
             auth.signOut().then(() => {
+                localStorage.removeItem('giocatoreEmail');
                 window.location.reload();
             });
         }
