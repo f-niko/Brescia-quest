@@ -40,31 +40,34 @@
             <p class="text-gray-400 text-xs mb-6">Crea il tuo Avatar e inizia l'avventura</p>
             
             <form id="form-login" onsubmit="gestisciLogin(event)" class="text-left space-y-4">
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
-                    <input type="email" id="login-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Nome del Player</label>
-                    <input type="text" id="login-nome" required minlength="3" maxlength="12" placeholder="Max 12 caratteri" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
-                </div>
-                
-                <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Seleziona Genere Avatar</label>
-                    <select id="login-genere" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
-                        <option value="" disabled selected>Scegli il tuo stile...</option>
-                        <option value="Esploratore">Esploratore 🧑‍🚀</option>
-                        <option value="Esploratrice">Esploratrice 👩‍🚀</option>
-                    </select>
-                </div>
-                
-                <button type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors mt-4 cursor-pointer">
-                    CONCEDI GPS E INIZIA 🚀
-                </button>
-            </form>
-        </div>
+    <div>
+        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
+        <input type="email" id="login-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
     </div>
+    
+    <div>
+        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
+        <input type="password" id="login-password" required minlength="6" placeholder="Minimo 6 caratteri" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
+    </div>
+    
+    <div>
+        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Nome del Player</label>
+        <input type="text" id="login-nome" required minlength="3" maxlength="12" placeholder="Max 12 caratteri" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
+    </div>
+    
+    <div>
+        <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Seleziona Genere Avatar</label>
+        <select id="login-genere" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400">
+            <option value="" disabled selected>Scegli il tuo stile...</option>
+            <option value="Esploratore">Esploratore 🧑‍🚀</option>
+            <option value="Esploratrice">Esploratrice 👩‍🚀</option>
+        </select>
+    </div>
+    
+    <button type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors mt-4 cursor-pointer">
+        REGISTRATI / ACCEDI 🚀
+    </button>
+</form>
 
     <div id="popup-profilo" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
@@ -144,73 +147,107 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// 🎯 Aggiunta l'importazione di sendEmailVerification
+import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, doc, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDJeMeCgX5MfwWH8Dyok44d7XKacLGFiBc",
-            authDomain: "brescia-quest-1ddda.firebaseapp.com",
-            projectId: "brescia-quest-1ddda",
-            storageBucket: "brescia-quest-1ddda.firebasestorage.app",
-            messagingSenderId: "57771185253",
-            appId: "1:57771185253:web:92273ba5ed320363a0228c"
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyDJeMeCgX5MfwWH8Dyok44d7XKacLGFiBc",
+    authDomain: "brescia-quest-1ddda.firebaseapp.com",
+    projectId: "brescia-quest-1ddda",
+    storageBucket: "brescia-quest-1ddda.firebasestorage.app",
+    messagingSenderId: "57771185253",
+    appId: "1:57771185253:web:92273ba5ed320363a0228c"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-        let utenteCorrenteId = null;
+let utenteCorrenteId = null;
 
-        window.gestisciLogin = async function(event) {
-            event.preventDefault();
-            
-            const email = document.getElementById('login-email').value.trim();
-            const nome = document.getElementById('login-nome').value.trim();
-            const genere = document.getElementById('login-genere').value;
-            const passwordTemporanea = "BresciaQuest2026!"; 
+window.gestisciLogin = async function(event) {
+    event.preventDefault();
+    
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value; // Prende la vera password dell'utente
+    const nome = document.getElementById('login-nome').value.trim();
+    const genere = document.getElementById('login-genere').value;
 
+    try {
+        // 1. Tenta la registrazione del nuovo utente
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        
+        // 2. Invia l'email di conferma reale all'indirizzo inserito
+        await sendEmailVerification(user);
+        
+        // 3. Salva i dati iniziali su Firestore
+        const statoMonumenti = monumenti.map(m => ({ nome: m.nome, scoperto: false }));
+        await setDoc(doc(db, "utenti", user.uid), {
+            nome: nome,
+            genere: genere,
+            xp: 0,
+            livello: 1,
+            monumenti: statoMonumenti
+        });
+
+        alert("📧 Ti abbiamo inviato una mail di conferma! Clicca sul link ricevuto per attivare il tuo account e poi effettua l'accesso.");
+        
+        // Disconnetti l'utente finché non si è verificato
+        await auth.signOut();
+        window.location.reload();
+
+    } catch (error) {
+        // Se l'email esiste già, l'utente sta provando a fare il Login
+        if (error.code === 'auth/email-already-in-use') {
             try {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, passwordTemporanea);
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
                 const user = userCredential.user;
+
+                // 🛡️ CONTROLLO ANTISCAM: La mail è confermata?
+                if (!user.emailVerified) {
+                    alert("⚠️ Il tuo indirizzo email non è ancora stato verificato! Controlla la tua casella di posta.");
+                    await auth.signOut();
+                    return;
+                }
+
+                // Se è verificata, carica i dati di gioco
                 utenteCorrenteId = user.uid;
                 localStorage.setItem('giocatoreEmail', email);
 
-                const statoMonumenti = monumenti.map(m => ({ nome: m.nome, scoperto: false }));
-
-                await setDoc(doc(db, "utenti", user.uid), {
-                    nome: nome,
-                    genere: genere,
-                    xp: 0,
-                    livello: 1,
-                    monumenti: statoMonumenti
-                });
-
-                alert("🎉 Benvenuto Esploratore! Profilo creato sul Cloud.");
-                entraNelGioco(nome, genere, 0, 1, statoMonumenti);
-
-            } catch (error) {
-                if (error.code === 'auth/email-already-in-use') {
-                    try {
-                        const userCredential = await signInWithEmailAndPassword(auth, email, passwordTemporanea);
-                        const user = userCredential.user;
-                        utenteCorrenteId = user.uid;
-                        localStorage.setItem('giocatoreEmail', email);
-
-                        const docSnap = await getDoc(doc(db, "utenti", user.uid));
-                        if (docSnap.exists()) {
-                            const datiSito = docSnap.data();
-                            alert(`👋 Bentornato ${datiSito.nome}! Progressi sincronizzati.`);
-                            entraNelGioco(datiSito.nome, datiSito.genere, datiSito.xp, datiSito.livello, datiSito.monumenti);
-                        }
-                    } catch (loginError) {
-                        alert("❌ Errore d'accesso: " + loginError.message);
-                    }
-                } else {
-                    alert("❌ Errore: " + error.message);
+                const docSnap = await getDoc(doc(db, "utenti", user.uid));
+                if (docSnap.exists()) {
+                    const datiSito = docSnap.data();
+                    alert(`👋 Bentornato ${datiSito.nome}! Progressi sincronizzati.`);
+                    entraNelGioco(datiSito.nome, datiSito.genere, datiSito.xp, datiSito.livello, datiSito.monumenti);
                 }
+            } catch (loginError) {
+                alert("❌ Password errata o errore d'accesso: " + loginError.message);
             }
+        } else {
+            alert("❌ Errore durante la registrazione: " + error.message);
         }
+    }
+}
+
+// Modifichiamo anche il controllo automatico al caricamento pagina
+window.addEventListener('DOMContentLoaded', () => {
+    auth.onAuthStateChanged(async (user) => {
+        // Entra automaticamente solo se l'utente esiste ED è verificato
+        if (user && user.emailVerified) {
+            utenteCorrenteId = user.uid;
+            const docSnap = await getDoc(doc(db, "utenti", user.uid));
+            if (docSnap.exists()) {
+                const datiSito = docSnap.data();
+                entraNelGioco(datiSito.nome, datiSito.genere, datiSito.xp, datiSito.livello, datiSito.monumenti);
+            }
+        } else if (user && !user.emailVerified) {
+            // Se la sessione è rimasta attiva ma non è verificato, lo buttiamo fuori
+            await auth.signOut();
+        }
+    });
+});
 
        function entraNelGioco(nome, genere, xp, livello, datiMonumenti) {
     document.getElementById('schermata-login').classList.add('hidden');
