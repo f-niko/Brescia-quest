@@ -198,7 +198,7 @@
         </div>
     </div>
 
-    <header class="bg-gray-800 p-4 shadow-lg flex justify-between items-center z-10">
+    <header id="gioco-header" class="bg-gray-800 p-4 shadow-lg flex justify-between items-center z-10 hidden">
         <div onclick="apriPopupProfilo()" class="flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-1.5 rounded-xl transition-colors">
             <div id="avatar-icon" class="text-2xl bg-gray-700 p-1.5 rounded-full select-none">👤</div>
             <div>
@@ -215,7 +215,7 @@
         </div>
     </header>
 
-    <nav id="filtri-nav" class="bg-gray-850 p-2 flex gap-2 justify-center z-10 border-b border-gray-800">
+    <nav id="filtri-nav" class="bg-gray-850 p-2 flex gap-2 justify-center z-10 border-b border-gray-800 hidden">
         <button onclick="filtraCategoria('tutti')" class="bg-gray-700 hover:bg-gray-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer">🌍 Tutti</button>
         <button onclick="filtraCategoria('monumento')" class="bg-amber-700 hover:bg-amber-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer">🏛️ Monumenti</button>
         <button onclick="filtraCategoria('parco')" class="bg-green-700 hover:bg-green-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer">🌳 Parchi</button>
@@ -271,7 +271,7 @@
             document.getElementById('popup-profilo').classList.add('hidden');
         }
 
-        // AGGIUNTO: Funzione di controllo e feedback grafico in tempo reale dei requisiti della password
+        // Funzione di controllo e feedback grafico in tempo reale dei requisiti della password
         function validaPasswordInTempoReale() {
             const password = document.getElementById('login-password').value;
 
@@ -362,13 +362,13 @@
             const btnRegistrati = document.getElementById('tab-registrati');
 
             if (tab === 'accedi') {
-                formAccedi.classList.remove('hidden');
-                formRegistrati.classList.add('hidden');
+                formAccedi.className = "space-y-4";
+                formRegistrati.className = "space-y-4 hidden";
                 btnAccedi.className = "w-1/2 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-950 transition-colors cursor-pointer";
                 btnRegistrati.className = "w-1/2 py-2 text-sm font-bold rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer";
             } else {
-                formAccedi.classList.add('hidden');
-                formRegistrati.classList.remove('hidden');
+                formAccedi.className = "space-y-4 hidden";
+                formRegistrati.className = "space-y-4";
                 btnAccedi.className = "w-1/2 py-2 text-sm font-bold rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer";
                 btnRegistrati.className = "w-1/2 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-950 transition-colors cursor-pointer";
             }
@@ -542,6 +542,9 @@
                 });
             }
 
+            // MODIFICATO: Mostra l'header della UI e la barra filtri solo ora
+            document.getElementById('gioco-header').classList.remove('hidden');
+            document.getElementById('filtri-nav').classList.remove('hidden');
             document.getElementById('btn-wishlist').classList.remove('hidden');
             document.getElementById('btn-amici').classList.remove('hidden');
 
