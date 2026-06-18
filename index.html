@@ -11,9 +11,9 @@
     <style>
         #map { flex-grow: 1; width: 100%; z-index: 1; }
         header { position: relative; z-index: 99999 !important; }
-        #popup-scoperta, #popup-profilo, #popup-amici { z-index: 100000 !important; }
+        #popup-scoperta, #popup-profilo, #popup-amici, #popup-impostazioni-hub, #popup-impostazioni-generali { z-index: 100000 !important; }
         #wishlist-sidebar { z-index: 90000 !important; }
-        #btn-wishlist, #btn-amici { z-index: 85000 !important; display: none !important; }
+        #btn-wishlist, #btn-amici { z-index: 85000 !important; }
         #bottom-nav { z-index: 30000 !important; }
         #schermata-amici, #schermata-wishlist { z-index: 20000 !important; }
         
@@ -41,10 +41,10 @@
     <!-- WISHLIST SIDEBAR (nascosta) -->
     <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full" style="z-index: 999999 !important;">
         <div class="flex flex-col gap-4 mb-6 mt-2 relative" style="z-index: 1000000 !important;">
-            <button onclick="toggleWishlist();" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2.5 px-4 rounded-xl text-xs transition-colors border-none tracking-wider block text-center shadow-lg cursor-pointer relative" style="z-index: 1000005 !important;">
+            <button id="wishlist-close-btn" onclick="toggleWishlist();" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2.5 px-4 rounded-xl text-xs transition-colors border-none tracking-wider block text-center shadow-lg cursor-pointer relative" style="z-index: 1000005 !important;">
                 ✕ CHIUDI ELENCO
             </button>
-            <h2 class="text-xl font-bold text-yellow-400 mt-2">⚔️ La mia Wishlist</h2>
+            <h2 id="wishlist-title" class="text-xl font-bold text-yellow-400 mt-2">⚔️ La mia Wishlist</h2>
         </div>
         <div id="lista-monumenti" class="space-y-3"></div>
     </div>
@@ -54,7 +54,7 @@
         <div class="max-w-sm w-full bg-gray-800 p-6 rounded-2xl border-2 border-yellow-500 shadow-xl text-center">
             <span class="text-6xl animate-pulse">🎮</span>
             <h2 class="text-2xl font-bold text-yellow-400 mt-2">BRESCIA QUEST</h2>
-            <p class="text-gray-400 text-xs mb-4">Inizia la tua avventura urbana</p>
+            <p id="login-subtitle" class="text-gray-400 text-xs mb-4">Inizia la tua avventura urbana</p>
 
             <div class="flex bg-gray-900 p-1 rounded-xl mb-4 border border-gray-700">
                 <button id="tab-accedi" onclick="switchAuthTab('accedi')" class="w-1/2 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-950 transition-colors cursor-pointer">ACCEDI</button>
@@ -63,28 +63,28 @@
 
             <form id="form-accedi" onsubmit="gestisciAccedi(event)" class="text-left space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
+                    <label id="login-accedi-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
                     <input type="email" id="accedi-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
+                    <label id="login-accedi-password-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
                     <input type="password" id="accedi-password" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                 </div>
                 <div class="text-right">
-                    <button type="button" onclick="mostraRecuperoPassword()" class="text-xs text-yellow-400 hover:underline cursor-pointer">Hai dimenticato la password?</button>
+                    <button id="login-forgot-password" type="button" onclick="mostraRecuperoPassword()" class="text-xs text-yellow-400 hover:underline cursor-pointer">Hai dimenticato la password?</button>
                 </div>
-                <button type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
+                <button id="login-submit-btn" type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
                     ENTRA NEL GIOCO 🚀
                 </button>
             </form>
 
             <form id="form-registrati" onsubmit="gestisciRegistrazione(event)" class="text-left space-y-4 hidden">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
+                    <label id="register-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
                     <input type="email" id="login-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
+                    <label id="register-password-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
                     <input type="password" id="login-password" required placeholder="Inserisci la tua password" oninput="validaPasswordInTempoReale()" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                     
                     <div class="mt-2 space-y-1 text-[11px]">
@@ -103,18 +103,18 @@
                     </div>
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Nome del Player</label>
+                    <label id="register-name-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Nome del Player</label>
                     <input type="text" id="login-nome" required minlength="3" maxlength="12" placeholder="Max 12 caratteri" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Seleziona Genere Avatar</label>
+                    <label id="register-gender-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Seleziona Genere Avatar</label>
                     <select id="login-genere" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                         <option value="" disabled selected>Scegli il tuo stile...</option>
                         <option value="Esploratore">Esploratore 🧑‍🚀</option>
                         <option value="Esploratrice">Esploratrice 👩‍🚀</option>
                     </select>
                 </div>
-                <button type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
+                <button id="register-submit-btn" type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
                     CREA ACCOUNT 🌟
                 </button>
             </form>
@@ -125,35 +125,129 @@
     <div id="schermata-recupero" class="fixed inset-0 bg-gray-950 z-50 flex flex-col justify-center items-center p-6 hidden">
         <div class="max-w-sm w-full bg-gray-800 p-6 rounded-2xl border-2 border-yellow-500 shadow-xl text-center">
             <span class="text-5xl">🔑</span>
-            <h2 class="text-2xl font-bold text-yellow-400 mt-2">RECUPERO PASSWORD</h2>
-            <p class="text-gray-400 text-xs mb-6">Inserisci la tua email per ricevere il link di reimpostazione</p>
+            <h2 id="recovery-title" class="text-2xl font-bold text-yellow-400 mt-2">RECUPERO PASSWORD</h2>
+            <p id="recovery-subtitle" class="text-gray-400 text-xs mb-6">Inserisci la tua email per ricevere il link di reimpostazione</p>
 
             <form id="form-recupero" onsubmit="gestisciRecupero(event)" class="text-left space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email dell'account</label>
+                    <label id="recovery-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email dell'account</label>
                     <input type="email" id="recupero-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                 </div>
-                <button type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
+                <button id="recovery-submit-btn" type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
                     INVIA EMAIL DI RECUPERO 📨
                 </button>
-                <button type="button" onclick="tornaAlLogin()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
+                <button id="recovery-back-btn" type="button" onclick="tornaAlLogin()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
                     Annulla e Torna Indietro
                 </button>
             </form>
         </div>
     </div>
 
+    <!-- POPUP IMPOSTAZIONI HUB -->
+    <div id="popup-impostazioni-hub" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="hub-title" class="text-lg font-bold text-yellow-400">⚙️ Impostazioni profilo</h3>
+                <button onclick="chiudiPopupHubImpostazioni()" class="text-gray-400 hover:text-white text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div class="space-y-3">
+                <button id="hub-general-btn" onclick="apriPopupImpostazioniGenerali()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer text-sm text-left px-4">
+                    🌐 Impostazioni generali
+                </button>
+                <button id="hub-avatar-btn" onclick="apriPopupAvatarCustomization()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer text-sm text-left px-4">
+                    🧑‍🚀 Personalizzazione avatar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP IMPOSTAZIONI GENERALI -->
+    <div id="popup-impostazioni-generali" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="general-title" class="text-lg font-bold text-yellow-400">🌐 Impostazioni generali</h3>
+                <button onclick="ritornaAlMenuImpostazioni()" class="text-gray-400 hover:text-white text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <div>
+                    <label id="general-language-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Lingua</label>
+                    <select id="general-language-select" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-yellow-400 text-white">
+                        <option value="it">Italiano</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <button id="btn-salva-impostazioni-generali" type="button" onclick="salvaImpostazioniGenerali()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm">
+                    Salva impostazioni
+                </button>
+
+                <button id="general-back-btn" type="button" onclick="ritornaAlMenuImpostazioni()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
+                    Indietro
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- POPUP PERSONALIZZAZIONE AVATAR -->
+    <div id="popup-profilo" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden">
+        <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="profile-title" class="text-lg font-bold text-yellow-400">🧑‍🚀 Personalizzazione avatar</h3>
+                <button onclick="chiudiPopupProfilo()" class="text-gray-400 hover:text-white text-lg cursor-pointer">✕</button>
+            </div>
+
+            <div class="space-y-4">
+                <button id="profile-back-btn" type="button" onclick="ritornaAlMenuImpostazioni()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
+                    Torna al menu impostazioni
+                </button>
+
+                <div>
+                    <label id="profile-name-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Modifica Nome</label>
+                    <input type="text" id="edit-nome" maxlength="12" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-yellow-400 text-white">
+                </div>
+
+                <div>
+                    <label id="profile-gender-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Modifica Genere Avatar</label>
+                    <select id="edit-genere" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-yellow-400 text-white">
+                        <option value="Esploratore">Esploratore 🧑‍🚀</option>
+                        <option value="Esploratrice">Esploratrice 👩‍🚀</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label id="profile-photo-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Foto Profilo</label>
+                    <div class="flex items-center gap-3 mb-2">
+                        <div id="edit-avatar-preview" class="w-12 h-12 bg-gray-700 rounded-full overflow-hidden flex items-center justify-center text-xl font-bold">👤</div>
+                        <input type="file" id="edit-foto-file" accept="image/*" class="text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-yellow-500 file:text-gray-950 hover:file:bg-yellow-400 cursor-pointer">
+                    </div>
+                </div>
+
+                <button id="btn-salva-profilo" type="button" onclick="salvaModificheProfilo()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm">
+                    Salva Modifiche
+                </button>
+
+                <hr class="border-gray-700 my-2">
+
+                <button id="profile-logout-btn" onclick="eseguiLogout()" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm flex items-center justify-center gap-1">
+                    🚪 Esci dal Gioco (Logout)
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- HEADER GIOCO -->
     <header id="gioco-header" class="bg-gray-800 p-4 shadow-lg flex justify-between items-center z-10 hidden">
-        <div onclick="apriPopupProfilo()" class="flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-1.5 rounded-xl transition-colors">
-            <div id="avatar-icon" class="text-2xl bg-gray-700 p-1.5 rounded-full select-none">👤</div>
+        <div onclick="apriPopupHubImpostazioni()" class="flex items-center gap-2 cursor-pointer hover:bg-gray-700 p-1.5 rounded-xl transition-colors">
+            <div id="avatar-container" class="text-2xl bg-gray-700 p-1.5 rounded-full select-none overflow-hidden flex items-center justify-center w-10 h-10">👤</div>
             <div>
                 <h1 id="player-display-name" class="text-md font-bold text-yellow-400">Player</h1>
-                <p id="player-display-role" class="text-xs text-gray-400">Esploratore Urbano</p>
+                <p id="player-display-role" class="text-xs text-gray-400">Esploratore</p>
             </div>
         </div>
         <div class="text-right">
-            <div class="text-sm font-semibold text-green-400">LIVELLO: <span id="livello-txt">1</span></div>
+            <div class="text-sm font-semibold text-green-400"><span id="level-label">LIVELLO</span>: <span id="livello-txt">1</span></div>
             <div class="text-xs text-gray-300"><span id="xp-txt">0</span> / 300 XP</div>
             <div class="w-24 bg-gray-700 h-1.5 rounded-full mt-1 overflow-hidden">
                 <div id="xp-bar" class="bg-green-500 h-full transition-all duration-500" style="width: 0%"></div>
@@ -176,11 +270,11 @@
     <div id="popup-scoperta" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full text-center border-2 border-yellow-400 shadow-2xl">
             <span class="text-5xl">🏆</span>
-            <h3 class="text-2xl font-bold text-yellow-400 mt-2">BADGE SBLOCCATO!</h3>
+            <h3 id="popup-badge-title" class="text-2xl font-bold text-yellow-400 mt-2">BADGE SBLOCCATO!</h3>
             <p id="popup-nome" class="text-xl font-semibold mt-1">Nome Posto</p>
             <p id="popup-desc" class="text-gray-300 text-sm mt-3 px-2"></p>
             <div class="mt-4 text-green-400 font-bold font-mono text-lg">+100 XP GUADAGNATI!</div>
-            <button onclick="chiudiPopup()" class="mt-5 w-full bg-yellow-500 text-gray-950 font-bold py-2 rounded-xl cursor-pointer hover:bg-yellow-400">
+            <button id="popup-continue-btn" onclick="chiudiPopup()" class="mt-5 w-full bg-yellow-500 text-gray-950 font-bold py-2 rounded-xl cursor-pointer hover:bg-yellow-400">
                 Continua la Caccia
             </button>
         </div>
@@ -513,6 +607,262 @@
         let utenteCorrenteId = null;
         let datiUtenteLocale = null;
         let isAuthProcessing = false;
+        let linguaCorrente = localStorage.getItem('preferredLanguage') || 'it';
+        let fotoProfiloLocale = null;
+
+        const UI_TRANSLATIONS = {
+            it: {
+                title: 'Brescia Quest - Il Gioco Esplorativo',
+                loginSubtitle: 'Inizia la tua avventura urbana',
+                loginEmailLabel: 'Indirizzo Email',
+                loginPasswordLabel: 'Password',
+                forgotPassword: 'Hai dimenticato la password?',
+                loginSubmit: 'ENTRA NEL GIOCO 🚀',
+                registerEmailLabel: 'Indirizzo Email',
+                registerPasswordLabel: 'Password',
+                registerNameLabel: 'Nome del Player',
+                registerGenderLabel: 'Seleziona Genere Avatar',
+                registerSubmit: 'CREA ACCOUNT 🌟',
+                recoveryTitle: 'RECUPERO PASSWORD',
+                recoverySubtitle: 'Inserisci la tua email per ricevere il link di reimpostazione',
+                recoveryEmailLabel: "Indirizzo Email dell'account",
+                recoverySubmit: 'INVIA EMAIL DI RECUPERO 📨',
+                recoveryBack: 'Annulla e Torna Indietro',
+                hubTitle: '⚙️ Impostazioni profilo',
+                hubGeneral: '🌐 Impostazioni generali',
+                hubAvatar: '🧑‍🚀 Personalizzazione avatar',
+                generalTitle: '🌐 Impostazioni generali',
+                languageLabel: 'Lingua',
+                saveSettings: 'Salva impostazioni',
+                back: 'Indietro',
+                profileTitle: '🧑‍🚀 Personalizzazione avatar',
+                profileBack: 'Torna al menu impostazioni',
+                profileName: 'Modifica Nome',
+                profileGender: 'Modifica Genere Avatar',
+                profilePhoto: 'Foto Profilo',
+                saveProfile: 'Salva Modifiche',
+                logout: '🚪 Esci dal Gioco (Logout)',
+                levelLabel: 'LIVELLO',
+                wishlistTitle: '⚔️ La mia Wishlist',
+                wishlistClose: '✕ CHIUDI ELENCO',
+                badgeTitle: 'BADGE SBLOCCATO!',
+                continueHunt: 'Continua la Caccia',
+                filterAll: '🌍 Tutti',
+                filterMonument: '🏛️ Monumenti',
+                filterPark: '🌳 Parchi',
+                filterShop: '🛒 Spesa',
+                playerRole: 'Esploratore'
+            },
+            en: {
+                title: 'Brescia Quest - The Exploratory Game',
+                loginSubtitle: 'Start your urban adventure',
+                loginEmailLabel: 'Email Address',
+                loginPasswordLabel: 'Password',
+                forgotPassword: 'Forgot your password?',
+                loginSubmit: 'ENTER THE GAME 🚀',
+                registerEmailLabel: 'Email Address',
+                registerPasswordLabel: 'Password',
+                registerNameLabel: 'Player Name',
+                registerGenderLabel: 'Choose Avatar Gender',
+                registerSubmit: 'CREATE ACCOUNT 🌟',
+                recoveryTitle: 'PASSWORD RECOVERY',
+                recoverySubtitle: 'Enter your email to receive the reset link',
+                recoveryEmailLabel: 'Account email address',
+                recoverySubmit: 'SEND RECOVERY EMAIL 📨',
+                recoveryBack: 'Cancel and Go Back',
+                hubTitle: '⚙️ Profile settings',
+                hubGeneral: '🌐 General settings',
+                hubAvatar: '🧑‍🚀 Avatar customization',
+                generalTitle: '🌐 General settings',
+                languageLabel: 'Language',
+                saveSettings: 'Save settings',
+                back: 'Back',
+                profileTitle: '🧑‍🚀 Avatar customization',
+                profileBack: 'Back to settings menu',
+                profileName: 'Edit Name',
+                profileGender: 'Edit Avatar Gender',
+                profilePhoto: 'Profile Photo',
+                saveProfile: 'Save Changes',
+                logout: '🚪 Log out',
+                levelLabel: 'LEVEL',
+                wishlistTitle: '⚔️ My Wishlist',
+                wishlistClose: '✕ CLOSE LIST',
+                badgeTitle: 'BADGE UNLOCKED!',
+                continueHunt: 'Continue Hunt',
+                filterAll: '🌍 All',
+                filterMonument: '🏛️ Monuments',
+                filterPark: '🌳 Parks',
+                filterShop: '🛒 Shopping',
+                playerRole: 'Explorer'
+            }
+        };
+
+        function setText(id, value) {
+            const element = document.getElementById(id);
+            if (element) element.textContent = value;
+        }
+
+        function setHtml(id, value) {
+            const element = document.getElementById(id);
+            if (element) element.innerHTML = value;
+        }
+
+        function getAvatarMarkup(fotoUrl, genere) {
+            if (fotoUrl) {
+                return `<img src="${fotoUrl}" class="w-full h-full object-cover">`;
+            }
+
+            const emoji = genere === 'Esploratore' ? '🧑‍🚀' : '👩‍🚀';
+            return `<span class="text-xl">${emoji}</span>`;
+        }
+
+        function aggiornaAvatarUI(fotoUrl, genere) {
+            const avatarContainer = document.getElementById('avatar-container');
+            if (avatarContainer) {
+                avatarContainer.innerHTML = getAvatarMarkup(fotoUrl, genere);
+            }
+
+            const preview = document.getElementById('edit-avatar-preview');
+            if (preview) {
+                preview.innerHTML = getAvatarMarkup(fotoUrl, genere);
+            }
+        }
+
+        function getPlayerRoleLabel(lang) {
+            return (UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.it).playerRole;
+        }
+
+        function refreshLocalizedGameplay() {
+            if (typeof aggiornaMappaELista === 'function' && typeof map !== 'undefined' && map) {
+                aggiornaMappaELista();
+            }
+        }
+
+        function applyLanguage(lang) {
+            const translations = UI_TRANSLATIONS[lang] || UI_TRANSLATIONS.it;
+
+            linguaCorrente = lang;
+            localStorage.setItem('preferredLanguage', lang);
+            document.documentElement.lang = lang;
+            document.title = translations.title;
+
+            setText('login-subtitle', translations.loginSubtitle);
+            setText('login-accedi-email-label', translations.loginEmailLabel);
+            setText('login-accedi-password-label', translations.loginPasswordLabel);
+            setText('login-forgot-password', translations.forgotPassword);
+            setText('login-submit-btn', translations.loginSubmit);
+            setText('register-email-label', translations.registerEmailLabel);
+            setText('register-password-label', translations.registerPasswordLabel);
+            setText('register-name-label', translations.registerNameLabel);
+            setText('register-gender-label', translations.registerGenderLabel);
+            setText('register-submit-btn', translations.registerSubmit);
+            setText('recovery-title', translations.recoveryTitle);
+            setText('recovery-subtitle', translations.recoverySubtitle);
+            setText('recovery-email-label', translations.recoveryEmailLabel);
+            setText('recovery-submit-btn', translations.recoverySubmit);
+            setText('recovery-back-btn', translations.recoveryBack);
+            setText('hub-title', translations.hubTitle);
+            setHtml('hub-general-btn', translations.hubGeneral);
+            setHtml('hub-avatar-btn', translations.hubAvatar);
+            setText('general-title', translations.generalTitle);
+            setText('general-language-label', translations.languageLabel);
+            setText('btn-salva-impostazioni-generali', translations.saveSettings);
+            setText('general-back-btn', translations.back);
+            setText('profile-title', translations.profileTitle);
+            setText('profile-back-btn', translations.profileBack);
+            setText('profile-name-label', translations.profileName);
+            setText('profile-gender-label', translations.profileGender);
+            setText('profile-photo-label', translations.profilePhoto);
+            setText('btn-salva-profilo', translations.saveProfile);
+            setText('profile-logout-btn', translations.logout);
+            setText('level-label', translations.levelLabel);
+            setText('wishlist-title', translations.wishlistTitle);
+            setText('wishlist-close-btn', translations.wishlistClose);
+            setText('popup-badge-title', translations.badgeTitle);
+            setText('popup-continue-btn', translations.continueHunt);
+            setHtml('btn-filtro-tutti', translations.filterAll);
+            setHtml('btn-filtro-monumento', translations.filterMonument);
+            setHtml('btn-filtro-parco', translations.filterPark);
+            setHtml('btn-filtro-supermercato', translations.filterShop);
+
+            if (document.getElementById('player-display-role')) {
+                setText('player-display-role', getPlayerRoleLabel(lang));
+            }
+
+            refreshLocalizedGameplay();
+        }
+
+        function mostraSoloPopup(apriId) {
+            ['popup-impostazioni-hub', 'popup-impostazioni-generali', 'popup-profilo'].forEach((id) => {
+                const elemento = document.getElementById(id);
+                if (elemento) elemento.classList.add('hidden');
+            });
+
+            const target = document.getElementById(apriId);
+            if (target) target.classList.remove('hidden');
+        }
+
+        window.apriPopupHubImpostazioni = function() {
+            mostraSoloPopup('popup-impostazioni-hub');
+        }
+
+        window.chiudiPopupHubImpostazioni = function() {
+            const popup = document.getElementById('popup-impostazioni-hub');
+            if (popup) popup.classList.add('hidden');
+        }
+
+        window.apriPopupImpostazioniGenerali = function() {
+            const select = document.getElementById('general-language-select');
+            if (select) select.value = linguaCorrente;
+            mostraSoloPopup('popup-impostazioni-generali');
+        }
+
+        window.apriPopupAvatarCustomization = function() {
+            if (datiUtenteLocale) {
+                const nome = document.getElementById('edit-nome');
+                const genere = document.getElementById('edit-genere');
+                if (nome) nome.value = datiUtenteLocale.nome || '';
+                if (genere) genere.value = datiUtenteLocale.genere || 'Esploratore';
+                fotoProfiloLocale = datiUtenteLocale.fotoProfilo || null;
+                aggiornaAvatarUI(fotoProfiloLocale, datiUtenteLocale.genere || 'Esploratore');
+            }
+            mostraSoloPopup('popup-profilo');
+        }
+
+        window.apriPopupProfilo = window.apriPopupAvatarCustomization;
+
+        window.ritornaAlMenuImpostazioni = function() {
+            mostraSoloPopup('popup-impostazioni-hub');
+        }
+
+        window.chiudiPopupProfilo = function() {
+            const popup = document.getElementById('popup-profilo');
+            if (popup) popup.classList.add('hidden');
+        }
+
+        window.salvaImpostazioniGenerali = function() {
+            const select = document.getElementById('general-language-select');
+            const linguaSelezionata = select ? select.value : linguaCorrente;
+            applyLanguage(linguaSelezionata);
+            alert(linguaSelezionata === 'en' ? 'Settings saved.' : 'Impostazioni salvate.');
+        }
+
+        const inputFotoProfilo = document.getElementById('edit-foto-file');
+        if (inputFotoProfilo) {
+            inputFotoProfilo.addEventListener('change', async (event) => {
+                const file = event.target.files && event.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = () => {
+                    fotoProfiloLocale = reader.result;
+                    aggiornaAvatarUI(fotoProfiloLocale, document.getElementById('edit-genere')?.value || 'Esploratore');
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        applyLanguage(linguaCorrente);
 
         // ============================================
         // FUNZIONI DI AUTENTICAZIONE
@@ -574,6 +924,7 @@
                     xp: 0,
                     livello: 1,
                     monumenti: statoMonumenti,
+                    fotoProfilo: null,
                     amici: [],
                     status: "online",
                     ultimoAccesso: new Date().toISOString()
@@ -617,6 +968,7 @@
                 });
                 datiUtenteLocale = docSnap.data();
                 datiUtenteLocale.amici = datiUtenteLocale.amici || [];
+                fotoProfiloLocale = datiUtenteLocale.fotoProfilo || null;
                 window.entraNelGioco(datiUtenteLocale.nome, datiUtenteLocale.genere, datiUtenteLocale.xp, datiUtenteLocale.livello, datiUtenteLocale.monumenti);
             } else {
                 const statoMonumenti = (typeof monumenti !== 'undefined') ? monumenti.map(m => ({ nome: m.nome, scoperto: false })) : [];
@@ -626,11 +978,13 @@
                     xp: 0,
                     livello: 1,
                     monumenti: statoMonumenti,
+                    fotoProfilo: null,
                     amici: [],
                     status: "online",
                     ultimoAccesso: timestampCorrente
                 };
                 await setDoc(userRef, datiUtenteLocale);
+                fotoProfiloLocale = null;
                 window.entraNelGioco("Esploratore", "Esploratore", 0, 1, statoMonumenti);
             }
             isAuthProcessing = false;
@@ -654,17 +1008,28 @@
 
         window.salvaModificheProfilo = async function() {
             const nuovoNome = document.getElementById('edit-nome').value.trim();
-            const nuevoGenere = document.getElementById('edit-genere').value;
+            const nuovoGenere = document.getElementById('edit-genere').value;
             if (!nuovoNome) return;
+
+            const fotoProfiloDaSalvare = fotoProfiloLocale !== null ? fotoProfiloLocale : (datiUtenteLocale && datiUtenteLocale.fotoProfilo) ? datiUtenteLocale.fotoProfilo : null;
 
             try {
                 await updateDoc(doc(db, "utenti", utenteCorrenteId), {
                     nome: nuovoNome,
-                    genere: nuevoGenere
+                    genere: nuovoGenere,
+                    fotoProfilo: fotoProfiloDaSalvare
                 });
+                datiUtenteLocale = {
+                    ...(datiUtenteLocale || {}),
+                    nome: nuovoNome,
+                    genere: nuovoGenere,
+                    fotoProfilo: fotoProfiloDaSalvare
+                };
+                aggiornaAvatarUI(fotoProfiloDaSalvare, nuovoGenere);
+                document.getElementById('player-display-name').innerText = nuovoNome;
+                document.getElementById('player-display-role').innerText = getPlayerRoleLabel(linguaCorrente);
                 alert("✨ Profilo aggiornato con successo!");
                 chiudiPopupProfilo();
-                window.location.reload();
             } catch (e) {
                 console.error(e);
             }
@@ -852,8 +1217,8 @@
             document.getElementById('schermata-recupero').classList.add('hidden');
 
             document.getElementById('player-display-name').innerText = nome;
-            document.getElementById('player-display-role').innerText = genere;
-            document.getElementById('avatar-icon').innerText = (genere === "Esploratore") ? "🧑‍🚀" : "👩‍🚀";
+            document.getElementById('player-display-role').innerText = getPlayerRoleLabel(linguaCorrente);
+            aggiornaAvatarUI(fotoProfiloLocale || (datiUtenteLocale && datiUtenteLocale.fotoProfilo) || null, genere);
             document.getElementById('livello-txt').innerText = livello;
             document.getElementById('xp-txt').innerText = xp;
 
@@ -862,6 +1227,8 @@
 
             if (typeof playerXP !== 'undefined') playerXP = xp;
             if (typeof playerLevel !== 'undefined') playerLevel = livello;
+
+            setText('level-label', (UI_TRANSLATIONS[linguaCorrente] || UI_TRANSLATIONS.it).levelLabel);
 
             if (typeof monumenti !== 'undefined' && datiMonumenti) {
                 monumenti.forEach(m => {
@@ -873,6 +1240,10 @@
             // Avvia il gioco e mostra bottom nav
             if (typeof initGioco === 'function') {
                 initGioco();
+            }
+
+            if (datiUtenteLocale) {
+                aggiornaAvatarUI(datiUtenteLocale.fotoProfilo || fotoProfiloLocale || null, datiUtenteLocale.genere || genere);
             }
             
             // Forza visualizzazione della bottom nav
