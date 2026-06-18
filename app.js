@@ -115,7 +115,7 @@ function aggiornaWishlist() {
                 <p class="text-xs text-gray-400 font-mono label-distanza mt-1">${m.scoperto ? '🏁 Obiettivo Conquistato' : '📍 Distanza: Calcolo in corso...'}</p>
             </div>
             <div class="text-sm font-mono text-gray-400 bg-gray-800 px-2 py-1 rounded-md badge-xp shrink-0">
-                ${m.scoperto ? '' : '+100 XP'}
+                ${m.scoperto ? '✅' : '+100 XP'}
             </div>
         `;
         containerLista.appendChild(item);
@@ -131,7 +131,16 @@ function aggiornaWishlistFull() {
         return;
     }
 
-    const monumentiFiltrati = monumenti.filter(m => categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente);
+    let monumentiFiltrati = monumenti;
+    
+    // Recupera il filtro selezionato nel dropdown della wishlist full
+    const dropdownFiltro = document.getElementById('filtro-wishlist');
+    if (dropdownFiltro) {
+        const filtroSelezionato = dropdownFiltro.value;
+        if (filtroSelezionato !== 'tutti') {
+            monumentiFiltrati = monumenti.filter(m => m.categoria === filtroSelezionato);
+        }
+    }
     
     if (monumentiFiltrati.length === 0) {
         container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>Nessun luogo trovato in questa categoria.</p>";
@@ -139,7 +148,7 @@ function aggiornaWishlistFull() {
     }
 
     const daScoprireGlobali = monumenti.filter(m => !m.scoperto);
-    if (daScoprireGlobali.length === 0 && categoriaCorrente === 'tutti') {
+    if (daScoprireGlobali.length === 0) {
         container.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
         return;
     }
