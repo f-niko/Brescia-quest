@@ -29,7 +29,7 @@
         👥 <span class="text-xs ml-1 font-bold">Amici</span>
     </button>
 
-  <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full" style="z-index: 999999 !important;">
+    <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full" style="z-index: 999999 !important;">
         
         <div class="flex flex-col gap-4 mb-6 mt-2 relative" style="z-index: 1000000 !important;">
             <button onclick="toggleWishlist();" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2.5 px-4 rounded-xl text-xs transition-colors border-none tracking-wider block text-center shadow-lg cursor-pointer relative" style="z-index: 1000005 !important;">
@@ -37,9 +37,6 @@
             </button>
             <h2 class="text-xl font-bold text-yellow-400 mt-2">⚔️ La mia Wishlist</h2>
         </div>
-
-        <div id="lista-monumenti" class="space-y-3"></div>
-    </div>
 
         <div id="lista-monumenti" class="space-y-3"></div>
     </div>
@@ -79,7 +76,8 @@
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
-                    <input type="password" id="login-password" required minlength="6" placeholder="Minimo 6 caratteri" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+                    <input type="password" id="login-password" required minlength="6" maxlength="15" placeholder="6-15 caratteri, 1 Maiuscola, 1 Numero, 1 Speciale" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+                    <p class="text-[10px] text-gray-400 mt-1 leading-tight">La password deve contenere da 6 a 15 caratteri, almeno una lettera maiuscola, un numero e un carattere speciale (es. !, @, #, $, ?, etc.).</p>
                 </div>
                 <div>
                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Nome del Player</label>
@@ -89,8 +87,8 @@
                     <label class="block text-xs font-bold uppercase text-gray-400 mb-1">Seleziona Genere Avatar</label>
                     <select id="login-genere" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
                         <option value="" disabled selected>Scegli il tuo stile...</option>
-                        <option value="Esploratore">Esploratore </option>
-                        <option value="Esploratrice">Esploratrice </option>
+                        <option value="Esploratore">Esploratore 🧑‍🚀</option>
+                        <option value="Esploratrice">Esploratrice 👩‍🚀</option>
                     </select>
                 </div>
                 <button type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
@@ -230,6 +228,15 @@
             const sidebar = document.getElementById('wishlist-sidebar');
             if (sidebar) sidebar.classList.toggle('translate-x-full');
         }
+        
+        // Se la wishlist è aperta e clicchi sulla mappa, si chiude automaticamente!
+        document.getElementById('map').addEventListener('click', function() {
+            const sidebar = document.getElementById('wishlist-sidebar');
+            if (sidebar && !sidebar.classList.contains('translate-x-full')) {
+                sidebar.classList.add('translate-x-full');
+            }
+        });
+
         function apriPopupAmici() {
             document.getElementById('popup-amici').classList.remove('hidden');
             if (typeof window.aggiornaElencoClassificaAmici === 'function') {
@@ -325,12 +332,22 @@
         window.gestisciRegistrazione = async function(event) {
             event.preventDefault();
             if (isAuthProcessing) return;
-            isAuthProcessing = true;
 
             const email = document.getElementById('login-email').value.trim();
             const password = document.getElementById('login-password').value;
             const nome = document.getElementById('login-nome').value.trim();
             const genere = document.getElementById('login-genere').value;
+
+            // MODIFICATO: Controllo di validazione avanzato lato JavaScript tramite Espressione Regolare (Regex)
+            // Controlla: lunghezza 6-15, almeno 1 maiuscola, almeno 1 numero, almeno 1 speciale tra quelli indicati
+            const regexPassword = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{6,15}$/;
+
+            if (!regexPassword.test(password)) {
+                alert("❌ Password non valida!\n\nLa password deve rispettare questi requisiti:\n• Lunghezza compresa tra 6 e 15 caratteri\n• Almeno una lettera MAIUSCOLA\n• Almeno un numero (0-9)\n• Almeno un carattere speciale (es. !, @, #, $, ?, :, ;, .)");
+                return;
+            }
+
+            isAuthProcessing = true;
 
             try {
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -478,7 +495,7 @@
 
         window.salvaModificheProfilo = async function() {
             const nuovoNome = document.getElementById('edit-nome').value.trim();
-            const nuovoGenere = document.getElementById('edit-genere').value;
+            const nuevoGenere = document.getElementById('edit-genere').value;
             if (!nuovoNome) return;
 
             try {
