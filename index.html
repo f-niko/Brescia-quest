@@ -269,7 +269,14 @@
     <div id="schermata-wishlist" class="schermata-full hidden">
         <div class="flex justify-between items-center mb-6">
             <h2 class="text-2xl font-bold text-yellow-400">📋 La mia Wishlist</h2>
-            <button onclick="apriSchermata('mappa')" class="text-white text-xl hover:text-gray-400 transition-colors">✕</button>
+            <div class="flex gap-2">
+                <select id="filtro-wishlist" onchange="filtraWishlist(this.value)" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-yellow-400 cursor-pointer">
+                    <option value="tutti">🌍 Tutti</option>
+                    <option value="monumento">🏛️ Monumenti</option>
+                    <option value="parco">🌳 Parchi</option>
+                    <option value="supermercato">🛒 Supermercati</option>
+                </select>
+            </div>
         </div>
         <div id="lista-monumenti-full" class="space-y-3 overflow-y-auto flex-grow"></div>
     </div>
@@ -299,7 +306,7 @@
                 // Mostra header e filtri solo nella mappa
                 header.classList.remove('hidden');
                 filtri.classList.remove('hidden');
-                if (map) map.invalidateSize();
+                if (typeof map !== 'undefined' && map) map.invalidateSize();
             } else {
                 // Nascondi header e filtri per amici e wishlist
                 header.classList.add('hidden');
@@ -312,16 +319,17 @@
                     }
                 } else if (tipo === 'wishlist') {
                     document.getElementById('schermata-wishlist').classList.remove('hidden');
-                    aggiornaWishlistFull();
+                    document.getElementById('filtro-wishlist').value = 'tutti';
+                    aggiornaWishlistFull('tutti');
                 }
             }
         }
 
-        function chiudiSchermata(tipo) {
-            document.getElementById('schermata-' + tipo).classList.add('hidden');
+        function filtraWishlist(categoria) {
+            aggiornaWishlistFull(categoria);
         }
 
-        function aggiornaWishlistFull() {
+        function aggiornaWishlistFull(categoriaFiltro = 'tutti') {
             const container = document.getElementById('lista-monumenti-full');
             if (!container) return;
             
@@ -330,16 +338,13 @@
                 return;
             }
 
-            const monumentiFiltrati = monumenti.filter(m => categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente);
+            let monumentiFiltrati = monumenti;
+            if (categoriaFiltro !== 'tutti') {
+                monumentiFiltrati = monumenti.filter(m => m.categoria === categoriaFiltro);
+            }
             
             if (monumentiFiltrati.length === 0) {
                 container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>Nessun luogo trovato in questa categoria.</p>";
-                return;
-            }
-
-            const daScoprireGlobali = monumenti.filter(m => !m.scoperto);
-            if (daScoprireGlobali.length === 0 && categoriaCorrente === 'tutti') {
-                container.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
                 return;
             }
 
