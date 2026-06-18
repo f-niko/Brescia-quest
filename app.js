@@ -12,17 +12,6 @@ let animazioneInCorso = null;
 let primoAvvioGps = true;
 let codaPopup = [];
 
-// --- GESTIONE INTERFACCIA (Sidebar e Bottoni) ---
-function toggleWishlist() {
-    const sidebar = document.getElementById('wishlist-sidebar');
-    if (sidebar) sidebar.classList.toggle('translate-x-full');
-}
-
-function toggleAmici() {
-    const popup = document.getElementById('popup-amici');
-    if (popup) popup.classList.toggle('hidden');
-}
-
 // --- INIZIALIZZAZIONE DEL GIOCO ---
 function initGioco() {
     // CONTROLLO DI SICUREZZA: Se la mappa è già stata creata, si ferma ed evita l'errore!
@@ -58,6 +47,7 @@ function aggiornaMappaELista() {
 
     // Aggiorna sia la mappa che la lista grafica laterale
     aggiornaWishlist();
+    aggiornaWishlistFull();
 
     // Disegno dei marker sulla mappa
     monumenti.forEach(m => {
@@ -132,6 +122,51 @@ function aggiornaWishlist() {
     });
 }
 
+function aggiornaWishlistFull() {
+    const container = document.getElementById('lista-monumenti-full');
+    if (!container) return;
+    
+    if (typeof monumenti === 'undefined') {
+        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>Caricamento luoghi in corso...</p>";
+        return;
+    }
+
+    const monumentiFiltrati = monumenti.filter(m => categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente);
+    
+    if (monumentiFiltrati.length === 0) {
+        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>Nessun luogo trovato in questa categoria.</p>";
+        return;
+    }
+
+    const daScoprireGlobali = monumenti.filter(m => !m.scoperto);
+    if (daScoprireGlobali.length === 0 && categoriaCorrente === 'tutti') {
+        container.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
+        return;
+    }
+
+    container.innerHTML = "";
+    monumentiFiltrati.forEach(m => {
+        const item = document.createElement('div');
+        const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
+        item.id = `monumento-full-${safeId}`;
+        item.className = `p-3 rounded-xl flex justify-between items-center transition-all bg-gray-800 border ${
+            m.scoperto ? 'bg-green-950/40 border-green-500' : 'bg-gray-700/50 border-gray-600'
+        }`;
+        
+        item.innerHTML = `
+            <div class="flex-1 pr-2">
+                <p class="font-semibold text-sm ${m.scoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
+                <p class="text-[10px] text-gray-400 mt-0.5">${m.desc}</p>
+                <p class="text-xs text-gray-400 font-mono label-distanza-full mt-1">${m.scoperto ? '🏁 Obiettivo Conquistato' : '📍 Distanza: Calcolo in corso...'}</p>
+            </div>
+            <div class="text-sm font-mono text-gray-400 bg-gray-800 px-2 py-1 rounded-md badge-xp shrink-0">
+                ${m.scoperto ? '✅' : '+100 XP'}
+            </div>
+        `;
+        container.appendChild(item);
+    });
+}
+
 // --- FUNZIONE FILTRA CATEGORIA VIA NAVBAR ---
 function filtraCategoria(categoria) {
     categoriaCorrente = categoria;
@@ -200,7 +235,7 @@ function animaAvatar() {
     const fattoreFluidita = 0.05;
 
     if (Math.abs(diffLat) < 0.000001 && Math.abs(diffLng) < 0.000001) {
-        userMarker.setLatLng([posizioneTarget.lat, ULng]);
+        userMarker.setLatLng([posizioneTarget.lat, posizioneTarget.lng]);
         animazioneInCorso = null;
     } else {
         const nuovaLat = posAttuale.lat + (diffLat * fattoreFluidita);
@@ -237,12 +272,17 @@ function controllaProssimita(uLat, uLng) {
         const distanza = calcolaDistanza(uLat, uLng, m.lat, m.lng);
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
         const rigaElemento = document.getElementById(`monumento-${safeId}`);
+        const rigaElementoFull = document.getElementById(`monumento-full-${safeId}`);
 
         if (!m.scoperto) {
             // Se l'elemento è renderizzato nella wishlist laterale, aggiorna dinamicamente i metri in tempo reale
             if (rigaElemento) {
                 const labelDistanza = rigaElemento.querySelector('.label-distanza');
                 if (labelDistanza) labelDistanza.innerText = `📍 Distanza: ${Math.round(distanza)} metri`;
+            }
+            if (rigaElementoFull) {
+                const labelDistanzaFull = rigaElementoFull.querySelector('.label-distanza-full');
+                if (labelDistanzaFull) labelDistanzaFull.innerText = `📍 Distanza: ${Math.round(distanza)} metri`;
             }
 
             // Sblocco effettivo se l'utente scende sotto i 50 metri dal target
