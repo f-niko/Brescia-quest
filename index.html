@@ -14,20 +14,19 @@
         #popup-scoperta, #popup-profilo, #popup-amici { z-index: 100000 !important; }
         #wishlist-sidebar { z-index: 90000 !important; }
         #btn-wishlist, #btn-amici { z-index: 85000 !important; display: none !important; }
-        #bottom-nav { z-index: 9999 !important; }
-        #schermata-amici, #schermata-wishlist { z-index: 10000 !important; }
+        #bottom-nav { z-index: 30000 !important; }
+        #schermata-amici, #schermata-wishlist { z-index: 20000 !important; }
         
         .schermata-full {
             position: fixed;
             top: 0;
             left: 0;
             right: 0;
-            bottom: 0;
+            bottom: 64px;
             background: #111827;
-            z-index: 10000;
+            z-index: 20000;
             overflow-y: auto;
             padding: 1.5rem;
-            padding-bottom: 5rem;
             display: flex;
             flex-direction: column;
         }
@@ -287,46 +286,56 @@
         // ============================================
         // FUNZIONI DI GESTIONE SCHERMATE FULL
         // ============================================
-        function apriSchermata(tipo) {
-            // Nasconde tutte le schermate
+        window.apriSchermata = function(tipo) {
+            // 1. Nascondi solo le schermate dei contenuti, MAI la bottom-nav
             document.getElementById('schermata-amici').classList.add('hidden');
             document.getElementById('schermata-wishlist').classList.add('hidden');
             
-            // Nasconde la sidebar della wishlist se aperta
-            const sidebar = document.getElementById('wishlist-sidebar');
-            if (sidebar && !sidebar.classList.contains('translate-x-full')) {
-                sidebar.classList.add('translate-x-full');
-            }
+            // 2. Resetta l'estetica dei bottoni (per capire quale è selezionato)
+            const bottoniNav = document.querySelectorAll("#bottom-nav button");
+            bottoniNav.forEach(btn => {
+                btn.classList.remove("text-blue-400", "text-yellow-400", "text-yellow-500");
+                btn.classList.add("text-gray-400");
+            });
 
-            // Gestisci visibilità header, filtri e bottoni
-            const header = document.getElementById('gioco-header');
-            const filtri = document.getElementById('filtri-nav');
-
+            // 3. Gestisci cosa mostrare sopra la mappa
             if (tipo === 'mappa') {
-                // Mostra header e filtri solo nella mappa
-                header.classList.remove('hidden');
-                filtri.classList.remove('hidden');
+                // Mostra Header e Filtri solo quando sei sulla Mappa
+                document.getElementById('gioco-header').classList.remove('hidden');
+                document.getElementById('filtri-nav').classList.remove('hidden');
                 if (typeof map !== 'undefined' && map) map.invalidateSize();
-            } else {
-                // Nascondi header e filtri per amici e wishlist
-                header.classList.add('hidden');
-                filtri.classList.add('hidden');
                 
+                // Evidenzia il tasto mappa
+                bottoniNav[1].classList.remove("text-gray-400");
+                bottoniNav[1].classList.add("text-yellow-400");
+            } else {
+                // Nascondi Header e Filtri se vai in Amici o Wishlist
+                document.getElementById('gioco-header').classList.add('hidden');
+                document.getElementById('filtri-nav').classList.add('hidden');
+
                 if (tipo === 'amici') {
                     document.getElementById('schermata-amici').classList.remove('hidden');
+                    bottoniNav[0].classList.remove("text-gray-400");
+                    bottoniNav[0].classList.add("text-blue-400");
                     if (typeof window.aggiornaElencoClassificaAmici === 'function') {
                         window.aggiornaElencoClassificaAmici();
                     }
                 } else if (tipo === 'wishlist') {
                     document.getElementById('schermata-wishlist').classList.remove('hidden');
+                    bottoniNav[2].classList.remove("text-gray-400");
+                    bottoniNav[2].classList.add("text-yellow-500");
                     document.getElementById('filtro-wishlist').value = 'tutti';
-                    aggiornaWishlistFull('tutti');
+                    if (typeof aggiornaWishlistFull === 'function') {
+                        aggiornaWishlistFull('tutti');
+                    }
                 }
             }
         }
 
         function filtraWishlist(categoria) {
-            aggiornaWishlistFull(categoria);
+            if (typeof aggiornaWishlistFull === 'function') {
+                aggiornaWishlistFull(categoria);
+            }
         }
 
         function aggiornaWishlistFull(categoriaFiltro = 'tutti') {
