@@ -117,13 +117,25 @@
             display: none !important;
         }
 
-        .msg-visualizzato {
-            opacity: 0.7;
-            border-color: #4ade80 !important;
+        /* Stile spunte WhatsApp */
+        .spunta-grigia { color: #9ca3af; font-size: 12px; }
+        .spunta-blu { color: #3b82f6; font-size: 12px; }
+        .msg-container {
+            transition: all 0.3s ease;
         }
-        .msg-non-visualizzato {
-            border-color: #fbbf24 !important;
-            border-width: 2px !important;
+        .msg-container.non-visualizzato {
+            border-left: 3px solid #fbbf24;
+        }
+        .msg-container.visualizzato {
+            border-left: 3px solid #4ade80;
+        }
+        .msg-mittente {
+            background: rgba(251, 191, 36, 0.1);
+            border-right: 2px solid #fbbf24;
+        }
+        .msg-destinatario {
+            background: rgba(59, 130, 246, 0.05);
+            border-left: 2px solid #3b82f6;
         }
     </style>
 </head>
@@ -286,7 +298,7 @@
         </div>
     </div>
 
-    <!-- POPUP PROFILO (SENZA LOGOUT) -->
+    <!-- POPUP PROFILO -->
     <div id="popup-profilo" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden" style="z-index: 9999999 !important;">
         <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
             <div class="flex justify-between items-center mb-4">
@@ -389,7 +401,7 @@
             </div>
         </div>
 
-        <!-- SEZIONE INVIO MESSAGGIO CON PULSANTI GESTIONE -->
+        <!-- SEZIONE INVIO MESSAGGIO -->
         <div id="sezione-invia-messaggio" class="hidden mb-4">
             <div class="flex gap-2">
                 <input type="text" id="input-messaggio-chat" placeholder="Scrivi un messaggio alla squadra..." class="flex-grow bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
@@ -399,7 +411,7 @@
             </div>
             <div class="flex gap-2 mt-2">
                 <button onclick="window.marcaIstantaneaTuttiMessaggi()" class="bg-green-700/50 hover:bg-green-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-colors cursor-pointer">
-                    👁️ Segna tutti come visualizzati
+                    👁️ Segna tutti come letti
                 </button>
                 <button onclick="window.eliminaTuttiMessaggiChat()" class="bg-red-700/50 hover:bg-red-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-colors cursor-pointer">
                     🗑️ Elimina tutti i miei messaggi
@@ -758,7 +770,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDJeMeCgX5MfwWH8Dyok44d7XKacLGFiBc",
@@ -778,6 +790,7 @@
         let isAuthProcessing = false;
         let linguaCorrente = localStorage.getItem('preferredLanguage') || 'it';
         let fotoProfiloLocale = null;
+        let unsubscribeFeed = null;
 
         const UI_TRANSLATIONS = {
             it: {
@@ -1365,43 +1378,93 @@
         }
 
         // ============================================
-        // FUNZIONI PER GESTIONE MESSAGGI CHAT
+        // FUNZIONI PER GESTIONE MESSAGGI CHAT (STILE WHATSAPP - SIA MITTENTE CHE DESTINATARIO VEDONO SPUNTE BLU)
         // ============================================
+
+        // Genera le spunte stile WhatsApp
+        function getSpunteMessaggio(visualizzato) {
+            if (visualizzato) {
+                return `<span class="spunta-blu">✓✓</span>`; // Due spunte blu
+            } else {
+                return `<span class="spunta-grigia">✓✓</span>`; // Due spunte grigie
+            }
+        }
 
         // 1. FUNZIONE PER MARCARE UN MESSAGGIO COME VISUALIZZATO
         window.marcaMessaggioVisualizzato = async function(idMessaggio) {
             if (!utenteCorrenteId || !idMessaggio) return;
             
             try {
-                const userRef = doc(db, "utenti", utenteCorrenteId);
-                const userSnap = await getDoc(userRef);
+                // Cerca il messaggio per trovare il mittente
+                let mittenteId = null;
+                let messaggioTrovato = null;
                 
-                if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    const messaggi = userData.messaggi || [];
+                const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
+                if (mioSnap.exists()) {
+                    const mieiDati = mioSnap.data();
+                    const listaIdAmici = mieiDati.amici || [];
+                    const tuttiMembri = [utenteCorrenteId, ...listaIdAmici];
                     
-                    const messaggioTrovato = messaggi.find(m => m.id === idMessaggio);
-                    if (messaggioTrovato && !messaggioTrovato.visualizzato) {
-                        const messaggiAggiornati = messaggi.map(m => {
-                            if (m.id === idMessaggio) {
-                                return { ...m, visualizzato: true, visualizzatoIl: new Date().toISOString() };
+                    for (let idUtente of tuttiMembri) {
+                        const snapUtente = await getDoc(doc(db, "utenti", idUtente));
+                        if (snapUtente.exists()) {
+                            const dUtente = snapUtente.data();
+                            const messaggi = dUtente.messaggi || [];
+                            const trovato = messaggi.find(m => m.id === idMessaggio);
+                            if (trovato) {
+                                mittenteId = idUtente;
+                                messaggioTrovato = trovato;
+                                break;
                             }
-                            return m;
-                        });
-                        
-                        await updateDoc(userRef, {
-                            messaggi: messaggiAggiornati
-                        });
-                        
-                        window.aggiornaFeedSuccessiAmici();
+                        }
                     }
                 }
+                
+                if (!mittenteId || !messaggioTrovato) {
+                    console.error("Messaggio non trovato");
+                    return;
+                }
+                
+                // Se il messaggio è già visualizzato, non fare nulla
+                if (messaggioTrovato.visualizzato) return;
+                
+                // Aggiorna il messaggio nel documento del mittente
+                const mittenteRef = doc(db, "utenti", mittenteId);
+                const mittenteSnap = await getDoc(mittenteRef);
+                
+                if (mittenteSnap.exists()) {
+                    const mittenteData = mittenteSnap.data();
+                    const messaggi = mittenteData.messaggi || [];
+                    
+                    // Aggiungi l'ID di chi ha visualizzato alla lista
+                    const visualizzatoDa = messaggioTrovato.visualizzatoDa || [];
+                    if (!visualizzatoDa.includes(utenteCorrenteId)) {
+                        visualizzatoDa.push(utenteCorrenteId);
+                    }
+                    
+                    const messaggiAggiornati = messaggi.map(m => {
+                        if (m.id === idMessaggio) {
+                            return { 
+                                ...m, 
+                                visualizzato: true, 
+                                visualizzatoIl: new Date().toISOString(),
+                                visualizzatoDa: visualizzatoDa
+                            };
+                        }
+                        return m;
+                    });
+                    
+                    await updateDoc(mittenteRef, {
+                        messaggi: messaggiAggiornati
+                    });
+                }
+                
             } catch (e) {
                 console.error("Errore durante la marcatura del messaggio: ", e);
             }
         };
 
-        // 2. FUNZIONE PER ELIMINARE UN MESSAGGIO (SOLO PER IL MITTENTE)
+        // 2. FUNZIONE PER ELIMINARE UN MESSAGGIO (solo per il mittente)
         window.eliminaMessaggioChat = async function(idMessaggio) {
             if (!utenteCorrenteId || !idMessaggio) return;
             
@@ -1422,7 +1485,6 @@
                     });
                     
                     alert("✅ Messaggio eliminato con successo!");
-                    window.aggiornaFeedSuccessiAmici();
                 }
             } catch (e) {
                 console.error("Errore durante l'eliminazione del messaggio: ", e);
@@ -1430,7 +1492,7 @@
             }
         };
 
-        // 3. FUNZIONE PER ELIMINARE TUTTI I MESSAGGI (SOLO PER IL MITTENTE)
+        // 3. FUNZIONE PER ELIMINARE TUTTI I MESSAGGI
         window.eliminaTuttiMessaggiChat = async function() {
             if (!utenteCorrenteId) return;
             
@@ -1442,7 +1504,6 @@
                 });
                 
                 alert("✅ Tutti i messaggi eliminati con successo!");
-                window.aggiornaFeedSuccessiAmici();
             } catch (e) {
                 console.error("Errore durante l'eliminazione di tutti i messaggi: ", e);
                 alert("❌ Errore durante l'eliminazione dei messaggi.");
@@ -1454,34 +1515,58 @@
             if (!utenteCorrenteId) return;
             
             try {
-                const userRef = doc(db, "utenti", utenteCorrenteId);
-                const userSnap = await getDoc(userRef);
+                // Trova tutti i messaggi che l'utente ha ricevuto
+                const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
+                if (!mioSnap.exists()) return;
                 
-                if (userSnap.exists()) {
-                    const userData = userSnap.data();
-                    const messaggi = userData.messaggi || [];
+                const mieiDati = mioSnap.data();
+                const listaIdAmici = mieiDati.amici || [];
+                const tuttiMembri = [utenteCorrenteId, ...listaIdAmici];
+                
+                for (let idUtente of tuttiMembri) {
+                    if (idUtente === utenteCorrenteId) continue; // Salta i propri messaggi
                     
-                    const messaggiAggiornati = messaggi.map(m => {
-                        if (!m.visualizzato) {
-                            return { ...m, visualizzato: true, visualizzatoIl: new Date().toISOString() };
+                    const snapUtente = await getDoc(doc(db, "utenti", idUtente));
+                    if (snapUtente.exists()) {
+                        const dUtente = snapUtente.data();
+                        const messaggi = dUtente.messaggi || [];
+                        let modificato = false;
+                        
+                        const messaggiAggiornati = messaggi.map(m => {
+                            // Se il messaggio non è stato ancora visualizzato
+                            if (!m.visualizzato) {
+                                const visualizzatoDa = m.visualizzatoDa || [];
+                                if (!visualizzatoDa.includes(utenteCorrenteId)) {
+                                    visualizzatoDa.push(utenteCorrenteId);
+                                }
+                                modificato = true;
+                                return { 
+                                    ...m, 
+                                    visualizzato: true, 
+                                    visualizzatoIl: new Date().toISOString(),
+                                    visualizzatoDa: visualizzatoDa
+                                };
+                            }
+                            return m;
+                        });
+                        
+                        if (modificato) {
+                            await updateDoc(doc(db, "utenti", idUtente), {
+                                messaggi: messaggiAggiornati
+                            });
                         }
-                        return m;
-                    });
-                    
-                    await updateDoc(userRef, {
-                        messaggi: messaggiAggiornati
-                    });
-                    
-                    alert("✅ Tutti i messaggi segnati come visualizzati!");
-                    window.aggiornaFeedSuccessiAmici();
+                    }
                 }
+                
+                alert("✅ Tutti i messaggi segnati come letti!");
+                
             } catch (e) {
                 console.error("Errore durante la marcatura di tutti i messaggi: ", e);
                 alert("❌ Errore durante la marcatura dei messaggi.");
             }
         };
 
-        // 5. FUNZIONE AGGIORNATA PER INVIARE MESSAGGI CON ID UNICO
+        // 5. FUNZIONE PER INVIARE MESSAGGI CON ID UNICO
         window.inviaMessaggioChat = async function() {
             const input = document.getElementById('input-messaggio-chat');
             if (!input) return;
@@ -1510,30 +1595,34 @@
                         testo: testo,
                         timestamp: new Date().toISOString(),
                         visualizzato: false,
-                        visualizzatoIl: null
+                        visualizzatoIl: null,
+                        visualizzatoDa: []
                     })
                 });
                 
                 input.value = "";
-                window.aggiornaFeedSuccessiAmici();
             } catch (e) {
                 console.error("Errore durante l'invio del messaggio chat: ", e);
                 alert("❌ Errore nell'invio del messaggio. Riprova.");
             }
         };
 
-        // 6. FUNZIONE AGGIORNATA PER IL FEED CON VISUALIZZAZIONE ED ELIMINAZIONE
-        window.aggiornaFeedSuccessiAmici = async function() {
-            const container = document.getElementById('lista-amici-feed');
-            if (!container || !utenteCorrenteId) return;
+        // 6. FUNZIONE PER IL FEED CON onSnapshot (REALTIME)
+        function setupFeedListener() {
+            if (!utenteCorrenteId) return;
             
-            container.innerHTML = "<p class='text-gray-400 animate-pulse text-center py-4'>Caricamento bacheca...</p>";
-
-            try {
-                const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
-                if (!mioSnap.exists()) return;
+            if (unsubscribeFeed) {
+                unsubscribeFeed();
+                unsubscribeFeed = null;
+            }
+            
+            const container = document.getElementById('lista-amici-feed');
+            if (!container) return;
+            
+            unsubscribeFeed = onSnapshot(doc(db, "utenti", utenteCorrenteId), async (docSnap) => {
+                if (!docSnap.exists()) return;
                 
-                const mieiDati = mioSnap.data();
+                const mieiDati = docSnap.data();
                 const listaIdAmici = mieiDati.amici || [];
                 const tuttiMembri = [utenteCorrenteId, ...listaIdAmici];
                 let eventiBacheca = [];
@@ -1551,7 +1640,7 @@
                             if (m.scoperto) {
                                 eventiBacheca.push({
                                     timestamp: m.timestamp || dUtente.ultimoAccesso || new Date().toISOString(),
-                                    html: `🎉 <strong>${nomeVisualizzato}</strong> ha scoperto il luogo: <span class="text-green-400 font-semibold">${m.nome}</span>!`,
+                                    html: `🎉 <strong>${nomeVisualizzato}</strong> ha scoperto <span class="text-green-400 font-semibold">${m.nome}</span>!`,
                                     tipo: 'scoperta',
                                     id: `scoperta_${m.nome}_${idUtente}`,
                                     mittente: idUtente
@@ -1559,38 +1648,51 @@
                             }
                         });
 
-                        // MESSAGGI CON ID E STATO VISUALIZZAZIONE
+                        // MESSAGGI - TUTTI VEDONO LE SPUNTE BLU
                         const messaggiUtente = dUtente.messaggi || [];
                         messaggiUtente.forEach(msg => {
                             const isVisualizzato = msg.visualizzato || false;
-                            const iconaVisualizzato = isVisualizzato ? '👁️' : '📩';
-                            const testoVisualizzato = isVisualizzato ? ' (Visualizzato)' : ' (Non visualizzato)';
+                            // TUTTI vedono le spunte (sia mittente che destinatario)
+                            const spunte = getSpunteMessaggio(isVisualizzato);
                             
                             let pulsantiElimina = '';
+                            // Solo il mittente può eliminare
                             if (isMittente) {
                                 pulsantiElimina = `
                                     <button onclick="window.eliminaMessaggioChat('${msg.id}')" class="text-red-400 hover:text-red-600 text-xs ml-1 cursor-pointer" title="Elimina messaggio">🗑️</button>
-                                    <button onclick="window.marcaMessaggioVisualizzato('${msg.id}')" class="text-blue-400 hover:text-blue-600 text-xs ml-1 cursor-pointer" title="Segna come visualizzato">👁️</button>
+                                    <button onclick="window.marcaMessaggioVisualizzato('${msg.id}')" class="text-blue-400 hover:text-blue-600 text-xs ml-1 cursor-pointer" title="Segna come letto">👁️</button>
                                 `;
                             }
+                            
+                            const classeMsg = isVisualizzato ? 'visualizzato' : 'non-visualizzato';
+                            const classeMittente = isMittente ? 'msg-mittente' : 'msg-destinatario';
                             
                             eventiBacheca.push({
                                 timestamp: msg.timestamp || new Date().toISOString(),
                                 html: `
-                                    💬 <strong>${nomeVisualizzato}</strong>: <span class="text-gray-200">${msg.testo}</span>
-                                    <span class="text-[9px] text-gray-500 ml-1">${iconaVisualizzato}${testoVisualizzato}</span>
-                                    ${pulsantiElimina}
+                                    <div class="msg-container ${classeMsg} ${classeMittente} pl-2 pr-2 py-1 rounded-lg">
+                                        <div class="flex items-start gap-1">
+                                            <span class="font-semibold ${isMittente ? 'text-yellow-400' : 'text-blue-300'}">${nomeVisualizzato}:</span>
+                                            <span class="text-gray-200 break-words flex-1">${msg.testo}</span>
+                                        </div>
+                                        <div class="flex items-center justify-end gap-1 mt-0.5">
+                                            <span class="text-[9px]">${spunte}</span>
+                                            ${pulsantiElimina}
+                                        </div>
+                                    </div>
                                 `,
                                 tipo: 'messaggio',
                                 id: msg.id || `msg_${Date.now()}_${Math.random()}`,
                                 mittente: idUtente,
                                 visualizzato: isVisualizzato,
-                                msgData: msg
+                                msgData: msg,
+                                isMittente: isMittente
                             });
                         });
                     }
                 }
 
+                // Ordina dal più recente
                 eventiBacheca.sort((a, b) => {
                     if (a.timestamp > b.timestamp) return -1;
                     if (a.timestamp < b.timestamp) return 1;
@@ -1621,18 +1723,25 @@
                     }
                     
                     const riga = document.createElement('div');
-                    riga.className = `p-2.5 rounded-xl ${evento.tipo === 'messaggio' ? 'bg-gray-900/90 border border-gray-700/60' : 'bg-gray-800/50 border border-gray-700/30'} text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs`;
+                    let bgClass = 'bg-gray-900/90 border border-gray-700/60';
+                    if (evento.tipo === 'messaggio' && evento.isMittente) {
+                        bgClass = 'bg-gray-800/70 border border-yellow-600/30';
+                    } else if (evento.tipo === 'messaggio') {
+                        bgClass = 'bg-gray-900/90 border border-gray-700/60';
+                    } else {
+                        bgClass = 'bg-gray-800/50 border border-gray-700/30';
+                    }
+                    
+                    riga.className = `p-2.5 rounded-xl ${bgClass} text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs`;
                     
                     const ora = data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                     riga.innerHTML = `<span class="text-gray-500 mr-1.5">${ora}</span> ${evento.html}`;
                     container.appendChild(riga);
                 });
-
-            } catch (e) {
-                console.error("Errore di sincronizzazione feed/chat: ", e);
-                container.innerHTML = "<p class='text-red-400 text-center py-4'>Impossibile aggiornare la bacheca.</p>";
-            }
-        };
+            }, (error) => {
+                console.error("Errore nel listener del feed: ", error);
+            });
+        }
 
         // ============================================
         // AVVIO AUTENTICAZIONE
@@ -1641,7 +1750,7 @@
             auth.onAuthStateChanged(async (user) => {
                 if (user) {
                     if (user.emailVerified) {
-                        caricaEAvviaGioco(user);
+                        await caricaEAvviaGioco(user);
                     } else {
                         await signOut(auth);
                         document.getElementById('schermata-login').classList.remove('hidden');
@@ -1683,6 +1792,9 @@
             }
             
             document.getElementById('bottom-nav').classList.remove('hidden');
+            
+            setupFeedListener();
+            
             window.apriSchermata('mappa');
         }
     </script>
