@@ -118,10 +118,11 @@
         }
 
         /* Stile spunte WhatsApp */
-        .spunta-grigia { color: #9ca3af; font-size: 12px; }
-        .spunta-blu { color: #3b82f6; font-size: 12px; }
+        .spunta-grigia { color: #9ca3af; font-size: 12px; font-weight: bold; }
+        .spunta-blu { color: #3b82f6; font-size: 12px; font-weight: bold; }
         .msg-container {
             transition: all 0.3s ease;
+            border-radius: 8px;
         }
         .msg-container.non-visualizzato {
             border-left: 3px solid #fbbf24;
@@ -130,12 +131,10 @@
             border-left: 3px solid #4ade80;
         }
         .msg-mittente {
-            background: rgba(251, 191, 36, 0.1);
-            border-right: 2px solid #fbbf24;
+            background: rgba(251, 191, 36, 0.08);
         }
         .msg-destinatario {
             background: rgba(59, 130, 246, 0.05);
-            border-left: 2px solid #3b82f6;
         }
     </style>
 </head>
@@ -1378,24 +1377,27 @@
         }
 
         // ============================================
-        // FUNZIONI PER GESTIONE MESSAGGI CHAT (STILE WHATSAPP - SIA MITTENTE CHE DESTINATARIO VEDONO SPUNTE BLU)
+        // FUNZIONI PER GESTIONE MESSAGGI CHAT - CORRETTE
         // ============================================
 
         // Genera le spunte stile WhatsApp
         function getSpunteMessaggio(visualizzato) {
             if (visualizzato) {
-                return `<span class="spunta-blu">✓✓</span>`; // Due spunte blu
+                return `<span class="spunta-blu">✓✓</span>`;
             } else {
-                return `<span class="spunta-grigia">✓✓</span>`; // Due spunte grigie
+                return `<span class="spunta-grigia">✓✓</span>`;
             }
         }
 
-        // 1. FUNZIONE PER MARCARE UN MESSAGGIO COME VISUALIZZATO
+        // 1. FUNZIONE PER MARCARE UN MESSAGGIO COME VISUALIZZATO (CORRETTA)
         window.marcaMessaggioVisualizzato = async function(idMessaggio) {
-            if (!utenteCorrenteId || !idMessaggio) return;
+            if (!utenteCorrenteId || !idMessaggio) {
+                console.error("Mancano utente o id messaggio");
+                return;
+            }
             
             try {
-                // Cerca il messaggio per trovare il mittente
+                // CERCA IL MITTENTE DEL MESSAGGIO
                 let mittenteId = null;
                 let messaggioTrovato = null;
                 
@@ -1425,10 +1427,13 @@
                     return;
                 }
                 
-                // Se il messaggio è già visualizzato, non fare nulla
-                if (messaggioTrovato.visualizzato) return;
+                // SE GIÀ VISUALIZZATO, ESCE
+                if (messaggioTrovato.visualizzato) {
+                    console.log("Messaggio già visualizzato");
+                    return;
+                }
                 
-                // Aggiorna il messaggio nel documento del mittente
+                // AGGIORNA IL MESSAGGIO NEL DOCUMENTO DEL MITTENTE
                 const mittenteRef = doc(db, "utenti", mittenteId);
                 const mittenteSnap = await getDoc(mittenteRef);
                 
@@ -1436,8 +1441,7 @@
                     const mittenteData = mittenteSnap.data();
                     const messaggi = mittenteData.messaggi || [];
                     
-                    // Aggiungi l'ID di chi ha visualizzato alla lista
-                    const visualizzatoDa = messaggioTrovato.visualizzatoDa || [];
+                    let visualizzatoDa = messaggioTrovato.visualizzatoDa || [];
                     if (!visualizzatoDa.includes(utenteCorrenteId)) {
                         visualizzatoDa.push(utenteCorrenteId);
                     }
@@ -1457,6 +1461,8 @@
                     await updateDoc(mittenteRef, {
                         messaggi: messaggiAggiornati
                     });
+                    
+                    console.log("✅ Messaggio marcato come visualizzato!");
                 }
                 
             } catch (e) {
@@ -1464,7 +1470,7 @@
             }
         };
 
-        // 2. FUNZIONE PER ELIMINARE UN MESSAGGIO (solo per il mittente)
+        // 2. FUNZIONE PER ELIMINARE UN MESSAGGIO
         window.eliminaMessaggioChat = async function(idMessaggio) {
             if (!utenteCorrenteId || !idMessaggio) return;
             
@@ -1496,7 +1502,7 @@
         window.eliminaTuttiMessaggiChat = async function() {
             if (!utenteCorrenteId) return;
             
-            if (!confirm("Sei sicuro di voler eliminare TUTTI i tuoi messaggi? Questa azione non può essere annullata.")) return;
+            if (!confirm("Sei sicuro di voler eliminare TUTTI i tuoi messaggi?")) return;
             
             try {
                 await updateDoc(doc(db, "utenti", utenteCorrenteId), {
@@ -1515,7 +1521,6 @@
             if (!utenteCorrenteId) return;
             
             try {
-                // Trova tutti i messaggi che l'utente ha ricevuto
                 const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
                 if (!mioSnap.exists()) return;
                 
@@ -1524,7 +1529,7 @@
                 const tuttiMembri = [utenteCorrenteId, ...listaIdAmici];
                 
                 for (let idUtente of tuttiMembri) {
-                    if (idUtente === utenteCorrenteId) continue; // Salta i propri messaggi
+                    if (idUtente === utenteCorrenteId) continue;
                     
                     const snapUtente = await getDoc(doc(db, "utenti", idUtente));
                     if (snapUtente.exists()) {
@@ -1533,7 +1538,6 @@
                         let modificato = false;
                         
                         const messaggiAggiornati = messaggi.map(m => {
-                            // Se il messaggio non è stato ancora visualizzato
                             if (!m.visualizzato) {
                                 const visualizzatoDa = m.visualizzatoDa || [];
                                 if (!visualizzatoDa.includes(utenteCorrenteId)) {
@@ -1566,7 +1570,7 @@
             }
         };
 
-        // 5. FUNZIONE PER INVIARE MESSAGGI CON ID UNICO
+        // 5. FUNZIONE PER INVIARE MESSAGGI
         window.inviaMessaggioChat = async function() {
             const input = document.getElementById('input-messaggio-chat');
             if (!input) return;
@@ -1601,15 +1605,19 @@
                 });
                 
                 input.value = "";
+                console.log("✅ Messaggio inviato!");
             } catch (e) {
-                console.error("Errore durante l'invio del messaggio chat: ", e);
-                alert("❌ Errore nell'invio del messaggio. Riprova.");
+                console.error("Errore durante l'invio del messaggio: ", e);
+                alert("❌ Errore nell'invio del messaggio.");
             }
         };
 
-        // 6. FUNZIONE PER IL FEED CON onSnapshot (REALTIME)
+        // 6. FUNZIONE PER IL FEED CON onSnapshot
         function setupFeedListener() {
-            if (!utenteCorrenteId) return;
+            if (!utenteCorrenteId) {
+                console.log("Nessun utente corrente");
+                return;
+            }
             
             if (unsubscribeFeed) {
                 unsubscribeFeed();
@@ -1617,10 +1625,20 @@
             }
             
             const container = document.getElementById('lista-amici-feed');
-            if (!container) return;
+            if (!container) {
+                console.log("Container feed non trovato");
+                return;
+            }
+            
+            console.log("📡 Listener feed attivato per:", utenteCorrenteId);
             
             unsubscribeFeed = onSnapshot(doc(db, "utenti", utenteCorrenteId), async (docSnap) => {
-                if (!docSnap.exists()) return;
+                if (!docSnap.exists()) {
+                    console.log("Documento utente non esiste");
+                    return;
+                }
+                
+                console.log("🔄 Aggiornamento feed in tempo reale!");
                 
                 const mieiDati = docSnap.data();
                 const listaIdAmici = mieiDati.amici || [];
@@ -1648,15 +1666,13 @@
                             }
                         });
 
-                        // MESSAGGI - TUTTI VEDONO LE SPUNTE BLU
+                        // MESSAGGI
                         const messaggiUtente = dUtente.messaggi || [];
                         messaggiUtente.forEach(msg => {
                             const isVisualizzato = msg.visualizzato || false;
-                            // TUTTI vedono le spunte (sia mittente che destinatario)
                             const spunte = getSpunteMessaggio(isVisualizzato);
                             
                             let pulsantiElimina = '';
-                            // Solo il mittente può eliminare
                             if (isMittente) {
                                 pulsantiElimina = `
                                     <button onclick="window.eliminaMessaggioChat('${msg.id}')" class="text-red-400 hover:text-red-600 text-xs ml-1 cursor-pointer" title="Elimina messaggio">🗑️</button>
@@ -1692,7 +1708,6 @@
                     }
                 }
 
-                // Ordina dal più recente
                 eventiBacheca.sort((a, b) => {
                     if (a.timestamp > b.timestamp) return -1;
                     if (a.timestamp < b.timestamp) return 1;
@@ -1739,7 +1754,7 @@
                     container.appendChild(riga);
                 });
             }, (error) => {
-                console.error("Errore nel listener del feed: ", error);
+                console.error("❌ Errore nel listener del feed: ", error);
             });
         }
 
