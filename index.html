@@ -524,11 +524,9 @@
         document.getElementById('schermata-amici').classList.remove('hidden');
         bottoniNav[0].classList.remove("text-gray-400");
         bottoniNav[0].classList.add("text-blue-400");
-        // Aggiorna classifica e attiva il listener feed se siamo sul tab feed
         if (typeof window.aggiornaElencoClassificaAmici === 'function') {
           window.aggiornaElencoClassificaAmici();
         }
-        // Se il tab feed è attivo, avvia il real-time
         const feedPanel = document.getElementById('pannello-feed');
         if (feedPanel && !feedPanel.classList.contains('hidden')) {
           if (typeof window.avviaAscoltoChatRealTime === 'function') {
@@ -745,7 +743,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDJeMeCgX5MfwWH8Dyok44d7XKacLGFiBc",
@@ -1155,7 +1153,6 @@
     window.eseguiLogout = async function() {
       if (!confirm("Vuoi davvero uscire dal gioco?")) return;
       try {
-        // Ferma il real-time prima del logout
         window.stoppaAscoltoChatRealTime();
         if (utenteCorrenteId) {
           await updateDoc(doc(db, "utenti", utenteCorrenteId), { status: "offline" });
@@ -1358,16 +1355,136 @@
     }
 
     // ============================================
-    // FUNZIONI REAL-TIME FEED (CORE)
+    // FUNZIONI REAL-TIME FEED (CORE) - VERSIONE CON SPUNTE BLU
     // ============================================
 
-    // Genera le spunte stile WhatsApp
-    function getSpunteMessaggio(visualizzato) {
-      if (visualizzato) {
-        return `<span class="spunta-blu">✓✓</span>`;
-      } else {
-        return `<span class="spunta-grigia">✓✓</span>`;
+    // Genera e ordina a schermo i messaggi attingendo dalla bacheca aggiornata live
+    function renderizzaFeedDinamico() {
+      const container = document.getElementById('lista-amici-feed');
+      if (!container) return;
+
+      let eventiBacheca = [];
+      const tuttiIdMembri = Object.keys(cacheDatiMembri);
+
+      tuttiIdMembri.forEach(idUtente => {
+        const dUtente = cacheDatiMembri[idUtente];
+        if (!dUtente) return;
+        
+        const nomeVisualizzato = idUtente === utenteCorrenteId ? "Tu" : (dUtente.nome || "Esploratore");
+        const isMittente = idUtente === utenteCorrenteId;
+        
+        // 1. Estrai Monumenti scoperti
+        const monumentiUtente = dUtente.monumenti || [];
+        monumentiUtente.forEach(m => {
+          if (m.scoperto) {
+            eventiBacheca.push({
+              timestamp: m.timestamp || dUtente.ultimoAccesso || new Date().toISOString(),
+              html: `🎉 <strong>${nomeVisualizzato}</strong> ha scoperto <span class="text-green-400 font-semibold">${m.nome}</span>!`,
+              tipo: 'scoperta',
+              id: `scoperta_${m.nome}_${idUtente}`,
+              mittente: idUtente
+            });
+          }
+        });
+
+        // 2. Estrai Messaggi di testo della chat con logica spunte
+        const messaggiUtente = dUtente.messaggi || [];
+        let documentomodificato = false;
+
+        // Mappa i messaggi per verificare le letture in automatico
+        const messaggiControllati = messaggiUtente.map(msg => {
+          // Inizializza l'array delle letture se assente (per i vecchi messaggi)
+          if (!msg.letteDa) msg.letteDa = [];
+
+          if (idUtente !== utenteCorrenteId) {
+            // È un messaggio del mio AMICO: se non l'ho ancora letto, aggiungo il mio ID in automatico
+            if (!msg.letteDa.includes(utenteCorrenteId)) {
+              msg.letteDa.push(utenteCorrenteId);
+              documentomodificato = true; // Segnala che dobbiamo aggiornare Firestore
+            }
+          }
+          return msg;
+        });
+
+        // Se ci sono messaggi dell'amico che ho appena letto automaticamente, aggiorna il suo Firestore
+        if (documentomodificato && idUtente !== utenteCorrenteId) {
+          updateDoc(doc(db, "utenti", idUtente), { messaggi: messaggiControllati })
+            .catch(err => console.error("Errore durante l'aggiornamento automatico della lettura:", err));
+        }
+
+        // Genera l'HTML per i messaggi
+        messaggiControllati.forEach(msg => {
+          let spunteHtml = "";
+
+          if (isMittente) {
+            // È UN MIO MESSAGGIO: Devo vedere se l'amico lo ha letto
+            // Controlla se nell'array 'letteDa' c'è almeno un ID che non sia il mio (quello dell'amico)
+            const lettoDallAmico = msg.letteDa.some(id => id !== utenteCorrenteId);
+
+            if (lettoDallAmico) {
+              // Spunte Blu (Lette)
+              spunteHtml = `<span class="text-blue-400 text-xs ml-1 font-bold select-none">✓✓</span>`;
+            } else {
+              // Spunte Grigie (Inviato ma non ancora letto dall'altro)
+              spunteHtml = `<span class="text-gray-500 text-xs ml-1 select-none">✓✓</span>`;
+            }
+          }
+          // Se il messaggio è dell'AMICO, NON mostriamo spunte
+
+          eventiBacheca.push({
+            timestamp: msg.timestamp || new Date().toISOString(),
+            html: `💬 <strong>${nomeVisualizzato}</strong>: <span class="text-gray-100 break-words">${msg.testo}</span>${spunteHtml}`,
+            tipo: 'messaggio',
+            id: msg.id || `msg_${Date.now()}_${Math.random()}`,
+            mittente: idUtente,
+            isMittente: isMittente
+          });
+        });
+      });
+
+      // Ordina cronologicamente dal più recente in alto al più vecchio in basso
+      eventiBacheca.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+      // Limita a 30 eventi per prestazioni
+      if (eventiBacheca.length > 30) {
+        eventiBacheca = eventiBacheca.slice(0, 30);
       }
+
+      container.innerHTML = "";
+      if (eventiBacheca.length === 0) {
+        container.innerHTML = "<p class='text-gray-500 text-center py-4'>Ancora nessuna attività o messaggio in questa squadra.</p>";
+        return;
+      }
+
+      let dataCorrente = '';
+      eventiBacheca.forEach(evento => {
+        const data = new Date(evento.timestamp);
+        const dataStr = data.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+        
+        if (dataStr !== dataCorrente) {
+          dataCorrente = dataStr;
+          const separatore = document.createElement('div');
+          separatore.className = "text-[10px] text-gray-500 font-bold uppercase mt-3 mb-1.5 border-b border-gray-700/50 pb-1";
+          separatore.innerText = dataStr;
+          container.appendChild(separatore);
+        }
+        
+        const riga = document.createElement('div');
+        let bgClass = 'bg-gray-900/90 border border-gray-700/60';
+        if (evento.tipo === 'messaggio' && evento.isMittente) {
+          bgClass = 'bg-gray-800/70 border border-yellow-600/30';
+        } else if (evento.tipo === 'messaggio') {
+          bgClass = 'bg-gray-900/90 border border-gray-700/60';
+        } else {
+          bgClass = 'bg-gray-800/50 border border-gray-700/30';
+        }
+        
+        riga.className = `p-2.5 rounded-xl ${bgClass} text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs animate-fadeIn`;
+        
+        const ora = data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        riga.innerHTML = `<span class="text-gray-500 mr-1.5">${ora}</span> ${evento.html}`;
+        container.appendChild(riga);
+      });
     }
 
     // FUNZIONE CORE: Attiva l'ascolto in tempo reale dei messaggi e dei successi della squadra
@@ -1436,206 +1553,53 @@
       cacheDatiMembri = {};
     };
 
-    // Genera e ordina a schermo i messaggi attingendo dalla bacheca aggiornata live
-    function renderizzaFeedDinamico() {
-      const container = document.getElementById('lista-amici-feed');
-      if (!container) {
-        console.log("Container feed non trovato");
-        return;
-      }
-
-      let eventiBacheca = [];
-      const tuttiIdMembri = Object.keys(cacheDatiMembri);
-
-      tuttiIdMembri.forEach(idUtente => {
-        const dUtente = cacheDatiMembri[idUtente];
-        if (!dUtente) return;
-        
-        const nomeVisualizzato = idUtente === utenteCorrenteId ? "Tu" : (dUtente.nome || "Esploratore");
-        const isMittente = idUtente === utenteCorrenteId;
-        
-        // 1. Estrai Monumenti scoperti
-        const monumentiUtente = dUtente.monumenti || [];
-        monumentiUtente.forEach(m => {
-          if (m.scoperto) {
-            eventiBacheca.push({
-              timestamp: m.timestamp || dUtente.ultimoAccesso || new Date().toISOString(),
-              html: `🎉 <strong>${nomeVisualizzato}</strong> ha scoperto <span class="text-green-400 font-semibold">${m.nome}</span>!`,
-              tipo: 'scoperta',
-              id: `scoperta_${m.nome}_${idUtente}`,
-              mittente: idUtente
-            });
-          }
-        });
-
-        // 2. Estrai Messaggi di testo della chat
-        const messaggiUtente = dUtente.messaggi || [];
-        messaggiUtente.forEach(msg => {
-          const isVisualizzato = msg.visualizzato || false;
-          const spunte = getSpunteMessaggio(isVisualizzato);
-          
-          let pulsantiElimina = '';
-          if (isMittente) {
-            pulsantiElimina = `
-              <button onclick="window.eliminaMessaggioChat('${msg.id}')" class="text-red-400 hover:text-red-600 text-xs ml-1 cursor-pointer" title="Elimina messaggio">🗑️</button>
-              <button onclick="window.marcaMessaggioVisualizzato('${msg.id}')" class="text-blue-400 hover:text-blue-600 text-xs ml-1 cursor-pointer" title="Segna come letto">👁️</button>
-            `;
-          }
-          
-          const classeMsg = isVisualizzato ? 'visualizzato' : 'non-visualizzato';
-          const classeMittente = isMittente ? 'msg-mittente' : 'msg-destinatario';
-          
-          eventiBacheca.push({
-            timestamp: msg.timestamp || new Date().toISOString(),
-            html: `
-              <div class="msg-container ${classeMsg} ${classeMittente} pl-2 pr-2 py-1 rounded-lg">
-                <div class="flex items-start gap-1">
-                  <span class="font-semibold ${isMittente ? 'text-yellow-400' : 'text-blue-300'}">${nomeVisualizzato}:</span>
-                  <span class="text-gray-200 break-words flex-1">${msg.testo}</span>
-                </div>
-                <div class="flex items-center justify-end gap-1 mt-0.5">
-                  <span class="text-[9px]">${spunte}</span>
-                  ${pulsantiElimina}
-                </div>
-              </div>
-            `,
-            tipo: 'messaggio',
-            id: msg.id || `msg_${Date.now()}_${Math.random()}`,
-            mittente: idUtente,
-            visualizzato: isVisualizzato,
-            msgData: msg,
-            isMittente: isMittente
-          });
-        });
-      });
-
-      // Ordina cronologicamente dal più recente in alto al più vecchio in basso
-      eventiBacheca.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-
-      // Limita a 30 eventi per prestazioni
-      if (eventiBacheca.length > 30) {
-        eventiBacheca = eventiBacheca.slice(0, 30);
-      }
-
-      container.innerHTML = "";
-      if (eventiBacheca.length === 0) {
-        container.innerHTML = "<p class='text-gray-500 text-center py-4'>Ancora nessuna attività o messaggio in questa squadra.</p>";
-        return;
-      }
-
-      let dataCorrente = '';
-      eventiBacheca.forEach(evento => {
-        const data = new Date(evento.timestamp);
-        const dataStr = data.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
-        
-        if (dataStr !== dataCorrente) {
-          dataCorrente = dataStr;
-          const separatore = document.createElement('div');
-          separatore.className = "text-[10px] text-gray-500 font-bold uppercase mt-3 mb-1.5 border-b border-gray-700/50 pb-1";
-          separatore.innerText = dataStr;
-          container.appendChild(separatore);
-        }
-        
-        const riga = document.createElement('div');
-        let bgClass = 'bg-gray-900/90 border border-gray-700/60';
-        if (evento.tipo === 'messaggio' && evento.isMittente) {
-          bgClass = 'bg-gray-800/70 border border-yellow-600/30';
-        } else if (evento.tipo === 'messaggio') {
-          bgClass = 'bg-gray-900/90 border border-gray-700/60';
-        } else {
-          bgClass = 'bg-gray-800/50 border border-gray-700/30';
-        }
-        
-        riga.className = `p-2.5 rounded-xl ${bgClass} text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs animate-fadeIn`;
-        
-        const ora = data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
-        riga.innerHTML = `<span class="text-gray-500 mr-1.5">${ora}</span> ${evento.html}`;
-        container.appendChild(riga);
-      });
-    }
-
     // ============================================
-    // FUNZIONI PER GESTIONE MESSAGGI CHAT
+    // FUNZIONI PER GESTIONE MESSAGGI CHAT - VERSIONE CON SPUNTE BLU
     // ============================================
 
-    window.marcaMessaggioVisualizzato = async function(idMessaggio) {
-      if (!utenteCorrenteId || !idMessaggio) {
-        console.error("Mancano utente o id messaggio");
+    window.inviaMessaggioChat = async function() {
+      const input = document.getElementById('input-messaggio-chat');
+      if (!input) return;
+      const testo = input.value.trim();
+      if (!testo || !utenteCorrenteId) {
+        alert("Scrivi un messaggio prima di inviare!");
         return;
       }
-      
+
       try {
-        // CERCA IL MITTENTE DEL MESSAGGIO
-        let mittenteId = null;
-        let messaggioTrovato = null;
+        const idMessaggio = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         
-        const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
-        if (mioSnap.exists()) {
-          const mieiDati = mioSnap.data();
-          const listaIdAmici = mieiDati.amici || [];
-          const tuttiMembri = [utenteCorrenteId, ...listaIdAmici];
-          
-          for (let idUtente of tuttiMembri) {
-            const snapUtente = await getDoc(doc(db, "utenti", idUtente));
-            if (snapUtente.exists()) {
-              const dUtente = snapUtente.data();
-              const messaggi = dUtente.messaggi || [];
-              const trovato = messaggi.find(m => m.id === idMessaggio);
-              if (trovato) {
-                mittenteId = idUtente;
-                messaggioTrovato = trovato;
-                break;
-              }
-            }
+        const userRef = doc(db, "utenti", utenteCorrenteId);
+        const userSnap = await getDoc(userRef);
+        
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          if (!userData.messaggi) {
+            await updateDoc(userRef, { messaggi: [] });
           }
         }
+
+        await updateDoc(doc(db, "utenti", utenteCorrenteId), {
+          messaggi: arrayUnion({
+            id: idMessaggio,
+            testo: testo,
+            timestamp: new Date().toISOString(),
+            letteDa: [] // Array che conterrà gli ID di chi ha letto il messaggio
+          })
+        });
         
-        if (!mittenteId || !messaggioTrovato) {
-          console.error("Messaggio non trovato");
-          return;
-        }
-        
-        // SE GIÀ VISUALIZZATO, ESCE
-        if (messaggioTrovato.visualizzato) {
-          console.log("Messaggio già visualizzato");
-          return;
-        }
-        
-        // AGGIORNA IL MESSAGGIO NEL DOCUMENTO DEL MITTENTE
-        const mittenteRef = doc(db, "utenti", mittenteId);
-        const mittenteSnap = await getDoc(mittenteRef);
-        
-        if (mittenteSnap.exists()) {
-          const mittenteData = mittenteSnap.data();
-          const messaggi = mittenteData.messaggi || [];
-          
-          let visualizzatoDa = messaggioTrovato.visualizzatoDa || [];
-          if (!visualizzatoDa.includes(utenteCorrenteId)) {
-            visualizzatoDa.push(utenteCorrenteId);
-          }
-          
-          const messaggiAggiornati = messaggi.map(m => {
-            if (m.id === idMessaggio) {
-              return { 
-                ...m, 
-                visualizzato: true, 
-                visualizzatoIl: new Date().toISOString(),
-                visualizzatoDa: visualizzatoDa
-              };
-            }
-            return m;
-          });
-          
-          await updateDoc(mittenteRef, {
-            messaggi: messaggiAggiornati
-          });
-          
-          console.log("✅ Messaggio marcato come visualizzato!");
-        }
-        
+        input.value = "";
+        console.log("✅ Messaggio inviato! Il real-time lo mostrerà a tutti.");
       } catch (e) {
-        console.error("Errore durante la marcatura del messaggio: ", e);
+        console.error("Errore durante l'invio del messaggio: ", e);
+        alert("❌ Errore nell'invio del messaggio.");
       }
+    };
+
+    // Funzioni mantenute per compatibilità ma ora usano la nuova logica
+    window.marcaMessaggioVisualizzato = async function(idMessaggio) {
+      // Questa funzione ora è automatica, ma la manteniamo per compatibilità
+      console.log("La marcatura dei messaggi è ora automatica! Non serve più premere manualmente.");
     };
 
     window.eliminaMessaggioChat = async function(idMessaggio) {
@@ -1683,97 +1647,8 @@
     };
 
     window.marcaIstantaneaTuttiMessaggi = async function() {
-      if (!utenteCorrenteId) return;
-      
-      try {
-        const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
-        if (!mioSnap.exists()) return;
-        
-        const mieiDati = mioSnap.data();
-        const listaIdAmici = mieiDati.amici || [];
-        const tuttiMembri = [utenteCorrenteId, ...listaIdAmici];
-        
-        for (let idUtente of tuttiMembri) {
-          if (idUtente === utenteCorrenteId) continue;
-          
-          const snapUtente = await getDoc(doc(db, "utenti", idUtente));
-          if (snapUtente.exists()) {
-            const dUtente = snapUtente.data();
-            const messaggi = dUtente.messaggi || [];
-            let modificato = false;
-            
-            const messaggiAggiornati = messaggi.map(m => {
-              if (!m.visualizzato) {
-                const visualizzatoDa = m.visualizzatoDa || [];
-                if (!visualizzatoDa.includes(utenteCorrenteId)) {
-                  visualizzatoDa.push(utenteCorrenteId);
-                }
-                modificato = true;
-                return { 
-                  ...m, 
-                  visualizzato: true, 
-                  visualizzatoIl: new Date().toISOString(),
-                  visualizzatoDa: visualizzatoDa
-                };
-              }
-              return m;
-            });
-            
-            if (modificato) {
-              await updateDoc(doc(db, "utenti", idUtente), {
-                messaggi: messaggiAggiornati
-              });
-            }
-          }
-        }
-        
-        alert("✅ Tutti i messaggi segnati come letti!");
-        
-      } catch (e) {
-        console.error("Errore durante la marcatura di tutti i messaggi: ", e);
-        alert("❌ Errore durante la marcatura dei messaggi.");
-      }
-    };
-
-    window.inviaMessaggioChat = async function() {
-      const input = document.getElementById('input-messaggio-chat');
-      if (!input) return;
-      const testo = input.value.trim();
-      if (!testo || !utenteCorrenteId) {
-        alert("Scrivi un messaggio prima di inviare!");
-        return;
-      }
-
-      try {
-        const idMessaggio = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        
-        const userRef = doc(db, "utenti", utenteCorrenteId);
-        const userSnap = await getDoc(userRef);
-        
-        if (userSnap.exists()) {
-          const userData = userSnap.data();
-          if (!userData.messaggi) {
-            await updateDoc(userRef, { messaggi: [] });
-          }
-        }
-
-        await updateDoc(doc(db, "utenti", utenteCorrenteId), {
-          messaggi: arrayUnion({
-            id: idMessaggio,
-            testo: testo,
-            timestamp: new Date().toISOString(),
-            visualizzato: false,
-            visualizzatoIl: null,
-            visualizzatoDa: []
-          })
-        });
-        
-        input.value = "";
-        console.log("✅ Messaggio inviato! Il real-time lo mostrerà a tutti.");
-      } catch (e) {
-        console.error("Errore durante l'invio del messaggio: ", e);
-        alert("❌ Errore nell'invio del messaggio.");
-      }
+      // Questa funzione ora è automatica, ma la manteniamo per compatibilità
+      alert("La marcatura dei messaggi è ora automatica! Non serve più premere manualmente.");
     };
 
     // ============================================
@@ -1884,29 +1759,24 @@
       
       document.getElementById('bottom-nav').classList.remove('hidden');
       
-      // Avvia il real-time se il tab feed è attivo (default è classifica)
-      // Il listener verrà attivato quando l'utente clicca sul tab feed
-      
       window.apriSchermata('mappa');
     }
 
     // ============================================
     // CHIUSURA POPUP AMICI CON STOP REAL-TIME
     // ============================================
-    // Estendiamo la funzione chiudiPopupAmici se esiste già
     const originalChiudiPopupAmici = window.chiudiPopupAmici;
     window.chiudiPopupAmici = function() {
       if (document.getElementById('popup-amici')) {
         document.getElementById('popup-amici').classList.add('hidden');
       }
-      // Interrompe l'ascolto cloud per non consumare dati in background
       window.stoppaAscoltoChatRealTime();
       if (typeof originalChiudiPopupAmici === 'function') {
         originalChiudiPopupAmici();
       }
     };
 
-    console.log("✅ Brescia Quest real-time feed attivo!");
+    console.log("✅ Brescia Quest real-time feed attivo con spunte blu stile WhatsApp!");
   </script>
 </body>
 </html>
