@@ -84,4 +84,34 @@ const monumenti = [
         "categoria": "monumento",
         "scoperto": false
     }
+    {
+        // palazzo della loggia 45.539936544698506, 10.219329974410597
+        "id": 10,
+        "nome": "Palazzo della Loggia",
+        "lat": 45.5399,
+        "lng": 10.2193,
+        "desc": "Un capolavoro del Rinascimento italiano, ma soprattutto un luogo vivo, che da oltre un secolo ospita il governo cittadino.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // duomo vecchio 45.5382675808956, 10.221598577357822
+        "id": 11,
+        "nome": "Duomo vecchio",
+        "lat": 45.5382,
+        "lng": 10.2215,
+        "desc": "Il Duomo Vecchio è stato eretto su una precedente chiesa paleocristiana, chiamata Santa Maria Maggiore e fondata dal vescovo Filastrio tra IV e V secolo D.C.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // cattedrale di santa maria assunta 45.53865247243331, 10.221875366191192
+        "id": 12,
+        "nome": "Cattedrale di Santa Maria Assunta",
+        "lat": 45.5386,
+        "lng": 10.2218,
+        "desc": "Il Duomo Nuovo di Brescia, progettato dall’architetto Giovanbattista Lantana, sorge al centro di Piazza Paolo VI, sopra i resti dell’antica basilica paleocristiana di San Pietro de Dom.",
+        "categoria": "monumento",
+        "scoperto": false
+    }
 ];
