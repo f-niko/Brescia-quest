@@ -165,7 +165,7 @@ const monumenti = [
         "scoperto": false
     },
     {
-        // spedali civili di brescia 45.55644685314258, 10.231851948390482
+        // spedali civili di brescia 45.55644685314258, 10.231851948390482 pp
         "id": 18,
         "nome": "Spedali civili di Brescia",
         "lat": 45.5564,
