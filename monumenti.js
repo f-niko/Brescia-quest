@@ -123,5 +123,15 @@ const monumenti = [
         "desc": "SCUOLA DI MERDA",
         "categoria": "monumento",
         "scoperto": false
+    },
+    {
+        // piazza della vittoria 45.538183840195, 10.21929230783374
+        "id": 14,
+        "nome": "Piazza della Vittoria",
+        "lat": 45.5381,
+        "lng": 10.2192,
+        "desc": "Progettata dal Piacentini, la centralissima Piazza Vittoria di Brescia fu inaugurata nel 1932 secondo il nuovo piano urbanistico fascista.",
+        "categoria": "parco",
+        "scoperto": true
     }
 ];
