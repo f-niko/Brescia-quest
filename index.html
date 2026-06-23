@@ -531,6 +531,36 @@
       border: 1px solid rgba(255, 255, 255, 0.06);
     }
 
+    /* Audio Player Button */
+    #audio-control {
+      position: fixed;
+      bottom: 80px;
+      right: 16px;
+      z-index: 99999;
+      background: rgba(10, 10, 15, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(234, 179, 8, 0.2);
+      border-radius: 50%;
+      width: 48px;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+    #audio-control:hover {
+      transform: scale(1.1);
+      border-color: rgba(234, 179, 8, 0.4);
+      box-shadow: 0 0 30px rgba(234, 179, 8, 0.15);
+    }
+    #audio-control.playing {
+      border-color: rgba(74, 222, 128, 0.3);
+      box-shadow: 0 0 30px rgba(74, 222, 128, 0.1);
+    }
+
     /* Responsive */
     @media (max-width: 640px) {
       #login-bar { padding: 8px 12px; height: 54px; }
@@ -538,6 +568,13 @@
       .schermata-full { padding: 1rem; }
       #bottom-nav { height: 58px; }
       #bottom-nav button .nav-icon { font-size: 20px; }
+      #audio-control {
+        bottom: 72px;
+        right: 12px;
+        width: 42px;
+        height: 42px;
+        font-size: 17px;
+      }
     }
   </style>
 </head>
@@ -963,7 +1000,107 @@
     <div id="lista-monumenti" class="space-y-3"></div>
   </div>
 
+  <!-- AUDIO CONTROL BUTTON -->
+  <div id="audio-control" class="playing" onclick="toggleAudio()" title="Attiva/Disattiva musica">
+    <span id="audio-icon">🔊</span>
+  </div>
+
   <script>
+
+// ============================================
+// SISTEMA AUDIO - MUSICA DI SOTTOFONDO
+// ============================================
+let audioPlayer = null;
+let audioPlaying = false;
+
+// Nome del file corretto con la doppia estensione rilevata
+const FILE_AUDIO = 'guantanamo.mp3'; 
+
+function initAudio() {
+  // Se l'audio esiste già ed è in riproduzione, non fare nulla per evitare sovrapposizioni
+  if (audioPlayer) {
+    if (audioPlaying) return;
+    
+    // Se esiste ma è in pausa, prova a farlo ripartire
+    audioPlayer.play()
+      .then(() => {
+        audioPlaying = true;
+        aggiornaInterfacciaAudio(true);
+      })
+      .catch(err => console.log("Riproduzione fallita:", err));
+    return;
+  }
+
+  // Creiamo l'oggetto Audio con il nome file corretto
+  audioPlayer = new Audio(FILE_AUDIO);
+  audioPlayer.loop = true;
+  audioPlayer.volume = 0.5;
+
+  // Avvia l'audio
+  audioPlayer.play()
+    .then(() => {
+      audioPlaying = true;
+      aggiornaInterfacciaAudio(true);
+    })
+    .catch((err) => {
+      console.log("Autoplay bloccato dal browser. In attesa di interazione valida.", err);
+    });
+}
+
+function toggleAudio() {
+  // Se l'utente preme il tasto muto prima che l'audio sia inizializzato, lo creiamo
+  if (!audioPlayer) {
+    initAudio();
+    return;
+  }
+
+  if (audioPlaying) {
+    audioPlayer.pause();
+    audioPlaying = false;
+    aggiornaInterfacciaAudio(false);
+  } else {
+    audioPlayer.play()
+      .then(() => {
+        audioPlaying = true;
+        aggiornaInterfacciaAudio(true);
+      })
+      .catch((err) => {
+        console.error("Impossibile riprodurre l'audio:", err);
+      });
+  }
+}
+
+// Funzione di supporto per aggiornare le icone e le classi CSS dell'interfaccia
+function aggiornaInterfacciaAudio(isPlaying) {
+  const icon = document.getElementById('audio-icon');
+  const control = document.getElementById('audio-control');
+  
+  if (!icon || !control) return; // Evita errori se gli elementi HTML non sono pronti
+
+  if (isPlaying) {
+    icon.textContent = '🔊';
+    control.classList.add('playing');
+  } else {
+    icon.textContent = '🔇';
+    control.classList.remove('playing');
+  }
+}
+
+// ============================================
+// GESTIONE DEGLI EVENTI DI ATTIVAZIONE
+// ============================================
+function gestisciPrimoClick() {
+  initAudio();
+  
+  // Rimuoviamo i listener dopo la prima interazione andata a buon fine
+  document.removeEventListener('click', gestisciPrimoClick);
+  document.removeEventListener('touchstart', gestisciPrimoClick);
+}
+
+// Ascolta il primo click o il primo tocco (per smartphone) ovunque sulla pagina
+document.addEventListener('click', gestisciPrimoClick);
+document.addEventListener('touchstart', gestisciPrimoClick);
+
     // ============================================
     // FUNZIONI DI GESTIONE SCHERMATE FULL
     // ============================================
@@ -979,7 +1116,9 @@
         loginBar.classList.add('visible');
         mapContainer.classList.add('with-login-bar');
         document.getElementById('filtri-nav').classList.remove('hidden');
-        if (typeof map !== 'undefined' && map) map.invalidateSize();
+        if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
+          setTimeout(() => { map.invalidateSize(); }, 100);
+        }
       } else {
         loginBar.classList.remove('visible');
         mapContainer.classList.remove('with-login-bar');
@@ -992,7 +1131,6 @@
         btn.classList.add('flex', 'flex-col', 'items-center', 'justify-center', 'p-2', 'rounded-xl', 'transition-all', 'bg-transparent', 'border-none', 'cursor-pointer', 'relative', 'min-w-[56px]');
       });
 
-      // Aggiungi classi specifiche per ogni bottone
       if (tipo === 'mappa') {
         document.getElementById('nav-mappa').classList.add('active-mappa');
       } else if (tipo === 'amici') {
@@ -1027,7 +1165,6 @@
       if (typeof window.aggiornaMappaELista === 'function') {
         window.aggiornaMappaELista(categoria);
       }
-      // Aggiorna stile filtri
       document.querySelectorAll('.filter-btn').forEach(btn => {
         btn.classList.remove('active', 'bg-yellow-400/20', 'border-yellow-400/30');
         btn.classList.add('bg-white/5', 'border-transparent');
@@ -1047,6 +1184,9 @@
 
     window.chiudiPopupScoperta = function() {
       document.getElementById('popup-scoperta').classList.add('hidden');
+      if (typeof window.chiudiPopup === 'function') {
+        window.chiudiPopup();
+      }
     };
 
     window.toggleWishlist = function() {
@@ -2796,8 +2936,10 @@
     window.avviaAscoltoClanRealTime = avviaAscoltoClanRealTime;
     window.salvaProgressoSuCloud = salvaProgressoSuCloud;
     window.entraNelGioco = entraNelGioco;
+    window.toggleAudio = toggleAudio;
 
-    console.log("✅ Brescia Quest - Sistema Amici + Clan + Tutorial attivo!");
+    console.log("✅ Brescia Quest - Sistema Amici + Clan + Tutorial + Musica attivo!");
+    console.log("🎵 Musica: guantanamo.mp3 in riproduzione!");
     console.log("👥 Amici: chat privata e classifica");
     console.log("🛡️ Clan: fino a 30 membri, chat centralizzata, elezione automatica del capo!");
     console.log("📖 Tutorial: si mostra solo al primo accesso!");
