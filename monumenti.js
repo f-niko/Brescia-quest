@@ -83,7 +83,7 @@ const monumenti = [
         "desc": "Punto di riferimento e coordinamento per la promozione, la valorizzazione e la gestione del patrimonio artistico e culturale \"sacro\" del centro storico di Brescia",
         "categoria": "monumento",
         "scoperto": false
-    }
+    },
     {
         // palazzo della loggia 45.539936544698506, 10.219329974410597
         "id": 10,
