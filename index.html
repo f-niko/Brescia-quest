@@ -6,15 +6,84 @@
   <title>Brescia Quest - Il Gioco Esplorativo</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
   <style>
+    * { font-family: 'Inter', sans-serif; }
+    
+    body {
+      background: #0a0a0f;
+      background-image: 
+        radial-gradient(ellipse at 10% 20%, rgba(234, 179, 8, 0.08) 0%, transparent 50%),
+        radial-gradient(ellipse at 90% 80%, rgba(139, 92, 246, 0.06) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 50%, rgba(59, 130, 246, 0.03) 0%, transparent 70%);
+    }
+
+    /* Glow effects */
+    .glow-gold {
+      box-shadow: 0 0 40px rgba(234, 179, 8, 0.15), 0 0 80px rgba(234, 179, 8, 0.05);
+    }
+    .glow-purple {
+      box-shadow: 0 0 40px rgba(139, 92, 246, 0.12), 0 0 80px rgba(139, 92, 246, 0.04);
+    }
+    .glow-blue {
+      box-shadow: 0 0 40px rgba(59, 130, 246, 0.12), 0 0 80px rgba(59, 130, 246, 0.04);
+    }
+
+    /* Glassmorphism */
+    .glass {
+      background: rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .glass-light {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .glass-dark {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Animations */
+    @keyframes float {
+      0%, 100% { transform: translateY(0px); }
+      50% { transform: translateY(-10px); }
+    }
+    @keyframes pulse-glow {
+      0%, 100% { opacity: 0.6; }
+      50% { opacity: 1; }
+    }
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .animate-float { animation: float 6s ease-in-out infinite; }
+    .animate-slideUp { animation: slideUp 0.6s ease-out forwards; }
+    .animate-scaleIn { animation: scaleIn 0.5s ease-out forwards; }
+
+    /* Map */
     #map { flex-grow: 1; width: 100%; z-index: 1; }
     header { position: relative; z-index: 99999 !important; }
-    #popup-scoperta, #popup-profilo, #popup-amici, #popup-impostazioni-hub, #popup-impostazioni-generali { z-index: 100000 !important; }
+    #popup-scoperta, #popup-profilo, #popup-amici, #popup-clan, #popup-impostazioni-hub, #popup-impostazioni-generali { z-index: 100000 !important; }
     #wishlist-sidebar { z-index: 90000 !important; }
-    #btn-wishlist, #btn-amici { z-index: 85000 !important; }
     #bottom-nav { z-index: 30000 !important; }
-    #schermata-amici, #schermata-wishlist { z-index: 20000 !important; }
+    #schermata-amici, #schermata-wishlist, #schermata-clan { z-index: 20000 !important; }
     #schermata-login { z-index: 999999 !important; }
+    #popup-tutorial { z-index: 9999999 !important; }
     
     .schermata-full {
       position: fixed;
@@ -22,32 +91,36 @@
       left: 0;
       right: 0;
       bottom: 64px;
-      background: #111827;
+      background: #0a0a0f;
       z-index: 20000;
       overflow-y: auto;
       padding: 1.5rem;
       display: flex;
       flex-direction: column;
+      animation: slideUp 0.4s ease-out;
     }
     
     .schermata-full.hidden {
       display: none !important;
     }
 
+    /* Login Bar */
     #login-bar {
       position: fixed;
       top: 0;
       left: 0;
       right: 0;
       z-index: 999998;
-      background: rgba(17, 24, 39, 0.95);
-      backdrop-filter: blur(10px);
-      padding: 8px 16px;
-      border-bottom: 2px solid #eab308;
+      background: rgba(10, 10, 15, 0.92);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      padding: 8px 20px;
+      border-bottom: 1px solid rgba(234, 179, 8, 0.2);
       display: none;
       justify-content: space-between;
       align-items: center;
-      height: 56px;
+      height: 60px;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
     }
 
     #login-bar.visible {
@@ -57,19 +130,21 @@
     #login-bar .login-info {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 14px;
     }
 
     #login-bar .login-info .avatar-small {
-      width: 32px;
-      height: 32px;
+      width: 36px;
+      height: 36px;
       border-radius: 50%;
-      background: #374151;
+      background: linear-gradient(135deg, #eab308, #f59e0b);
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 16px;
+      font-size: 18px;
       overflow: hidden;
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.3);
+      border: 2px solid rgba(234, 179, 8, 0.3);
     }
 
     #login-bar .login-info .avatar-small img {
@@ -79,30 +154,37 @@
     }
 
     #login-bar .login-info .user-name {
-      font-weight: bold;
+      font-weight: 700;
       color: #fbbf24;
-      font-size: 13px;
+      font-size: 14px;
+      letter-spacing: 0.3px;
     }
 
     #login-bar .login-info .user-role {
       font-size: 10px;
       color: #9ca3af;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     #login-bar .logout-btn {
-      background: #dc2626;
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
       color: white;
       border: none;
-      padding: 4px 12px;
-      border-radius: 8px;
+      padding: 6px 16px;
+      border-radius: 10px;
       font-size: 11px;
-      font-weight: bold;
+      font-weight: 700;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
     #login-bar .logout-btn:hover {
-      background: #b91c1c;
+      transform: scale(1.05);
+      box-shadow: 0 0 30px rgba(220, 38, 38, 0.3);
     }
 
     #map-container {
@@ -111,49 +193,355 @@
     }
 
     #map-container.with-login-bar {
-      margin-top: 56px;
-      height: calc(100vh - 56px - 64px);
+      margin-top: 60px;
+      height: calc(100vh - 60px - 64px);
     }
 
     #map {
       height: 100%;
       width: 100%;
+      border-radius: 0;
     }
 
-    #gioco-header {
-      display: none !important;
+    /* Bottom Nav */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(10, 10, 15, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 9999;
+      padding: 0 8px;
     }
 
-    /* Stile spunte WhatsApp */
-    .spunta-grigia { color: #9ca3af; font-size: 12px; font-weight: bold; }
-    .spunta-blu { color: #3b82f6; font-size: 12px; font-weight: bold; }
-    .msg-container {
+    #bottom-nav button {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 4px 12px;
+      border-radius: 12px;
       transition: all 0.3s ease;
-      border-radius: 8px;
-    }
-    .msg-container.non-visualizzato {
-      border-left: 3px solid #fbbf24;
-    }
-    .msg-container.visualizzato {
-      border-left: 3px solid #4ade80;
-    }
-    .msg-mittente {
-      background: rgba(251, 191, 36, 0.08);
-    }
-    .msg-destinatario {
-      background: rgba(59, 130, 246, 0.05);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      position: relative;
+      min-width: 56px;
     }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(8px); }
-      to { opacity: 1; transform: translateY(0); }
+    #bottom-nav button .nav-icon {
+      font-size: 22px;
+      transition: transform 0.3s ease;
     }
-    .animate-fadeIn {
-      animation: fadeIn 0.3s ease-out forwards;
+
+    #bottom-nav button .nav-label {
+      font-size: 9px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-top: 2px;
+      transition: all 0.3s ease;
+    }
+
+    #bottom-nav button:hover .nav-icon {
+      transform: translateY(-2px);
+    }
+
+    #bottom-nav button.active-mappa .nav-icon { color: #fbbf24; }
+    #bottom-nav button.active-mappa .nav-label { color: #fbbf24; }
+    #bottom-nav button.active-amici .nav-icon { color: #60a5fa; }
+    #bottom-nav button.active-amici .nav-label { color: #60a5fa; }
+    #bottom-nav button.active-clan .nav-icon { color: #a78bfa; }
+    #bottom-nav button.active-clan .nav-label { color: #a78bfa; }
+    #bottom-nav button.active-wishlist .nav-icon { color: #f59e0b; }
+    #bottom-nav button.active-wishlist .nav-label { color: #f59e0b; }
+
+    #bottom-nav button::after {
+      content: '';
+      position: absolute;
+      bottom: 4px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 0;
+      height: 2px;
+      border-radius: 2px;
+      transition: width 0.3s ease;
+    }
+
+    #bottom-nav button.active-mappa::after { background: #fbbf24; width: 20px; }
+    #bottom-nav button.active-amici::after { background: #60a5fa; width: 20px; }
+    #bottom-nav button.active-clan::after { background: #a78bfa; width: 20px; }
+    #bottom-nav button.active-wishlist::after { background: #f59e0b; width: 20px; }
+
+    /* Login Screen */
+    #schermata-login .login-box {
+      background: rgba(17, 24, 39, 0.8);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(234, 179, 8, 0.15);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 80px rgba(234, 179, 8, 0.05);
+    }
+
+    #schermata-login .login-box .game-icon {
+      animation: float 4s ease-in-out infinite;
+      filter: drop-shadow(0 0 30px rgba(234, 179, 8, 0.2));
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(234, 179, 8, 0.3); border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(234, 179, 8, 0.5); }
+
+    /* Inputs */
+    input, select {
+      transition: all 0.3s ease;
+    }
+    input:focus, select:focus {
+      border-color: #eab308 !important;
+      box-shadow: 0 0 0 3px rgba(234, 179, 8, 0.1);
+    }
+
+    /* Buttons */
+    .btn-primary {
+      background: linear-gradient(135deg, #eab308, #f59e0b);
+      color: #0a0a0f;
+      font-weight: 800;
+      padding: 12px 24px;
+      border-radius: 14px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      font-size: 13px;
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(234, 179, 8, 0.3);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: #9ca3af;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      cursor: pointer;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #fff;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-success:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(34, 197, 94, 0.3);
+    }
+
+    .btn-danger {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-danger:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(239, 68, 68, 0.3);
+    }
+
+    .btn-purple {
+      background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+      color: white;
+      font-weight: 700;
+      padding: 10px 20px;
+      border-radius: 12px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+    }
+    .btn-purple:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 30px rgba(139, 92, 246, 0.3);
+    }
+
+    /* Tabs */
+    .tab-container {
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: 14px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 12px;
+      transition: all 0.3s ease;
+      border: none;
+      cursor: pointer;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .tab-btn.active {
+      background: linear-gradient(135deg, #eab308, #f59e0b);
+      color: #0a0a0f;
+      box-shadow: 0 4px 15px rgba(234, 179, 8, 0.2);
+    }
+    .tab-btn.inactive {
+      background: transparent;
+      color: #6b7280;
+    }
+    .tab-btn.inactive:hover {
+      color: #fff;
+    }
+
+    /* Cards */
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      padding: 16px;
+      transition: all 0.3s ease;
+    }
+    .card:hover {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .card-gold {
+      background: rgba(234, 179, 8, 0.05);
+      border: 1px solid rgba(234, 179, 8, 0.1);
+    }
+    .card-gold:hover {
+      background: rgba(234, 179, 8, 0.08);
+      border-color: rgba(234, 179, 8, 0.2);
+    }
+
+    .card-blue {
+      background: rgba(59, 130, 246, 0.05);
+      border: 1px solid rgba(59, 130, 246, 0.1);
+    }
+    .card-blue:hover {
+      background: rgba(59, 130, 246, 0.08);
+      border-color: rgba(59, 130, 246, 0.2);
+    }
+
+    .card-purple {
+      background: rgba(139, 92, 246, 0.05);
+      border: 1px solid rgba(139, 92, 246, 0.1);
+    }
+    .card-purple:hover {
+      background: rgba(139, 92, 246, 0.08);
+      border-color: rgba(139, 92, 246, 0.2);
+    }
+
+    .card-green {
+      background: rgba(34, 197, 94, 0.05);
+      border: 1px solid rgba(34, 197, 94, 0.1);
+    }
+    .card-green:hover {
+      background: rgba(34, 197, 94, 0.08);
+      border-color: rgba(34, 197, 94, 0.2);
+    }
+
+    /* Badge XP */
+    .badge-xp {
+      background: linear-gradient(135deg, #fbbf24, #f59e0b);
+      color: #0a0a0f;
+      font-weight: 800;
+      padding: 2px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+    }
+
+    /* Status dot */
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .status-dot.online { background: #22c55e; box-shadow: 0 0 10px rgba(34, 197, 94, 0.5); }
+    .status-dot.offline { background: #6b7280; }
+
+    /* Popups */
+    .popup-content {
+      background: rgba(17, 24, 39, 0.92);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(234, 179, 8, 0.15);
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Wishlist Sidebar */
+    #wishlist-sidebar {
+      background: rgba(10, 10, 15, 0.97);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border-left: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Filters */
+    .filter-btn {
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 700;
+      transition: all 0.3s ease;
+      border: 1px solid transparent;
+      cursor: pointer;
+    }
+    .filter-btn:hover {
+      transform: translateY(-1px);
+    }
+    .filter-btn.active {
+      border-color: #eab308;
+      box-shadow: 0 0 20px rgba(234, 179, 8, 0.1);
+    }
+
+    /* Tutorial */
+    #popup-tutorial .tutorial-box {
+      background: rgba(17, 24, 39, 0.95);
+      backdrop-filter: blur(30px);
+      -webkit-backdrop-filter: blur(30px);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      #login-bar { padding: 8px 12px; height: 54px; }
+      #login-bar .login-info .user-name { font-size: 12px; }
+      .schermata-full { padding: 1rem; }
+      #bottom-nav { height: 58px; }
+      #bottom-nav button .nav-icon { font-size: 20px; }
     }
   </style>
 </head>
-<body class="bg-gray-900 text-white font-sans flex flex-col h-screen overflow-hidden">
+<body class="text-white font-sans flex flex-col h-screen overflow-hidden">
 
   <!-- BARRA DI LOGIN -->
   <div id="login-bar">
@@ -165,82 +553,82 @@
         <div id="login-bar-name" class="user-name">Player</div>
         <div id="login-bar-role" class="user-role">Esploratore</div>
       </div>
-      <div style="margin-left: 8px; font-size: 11px; color: #4ade80;">
-        <span id="login-bar-level">Lv.1</span> | <span id="login-bar-xp">0 XP</span>
+      <div style="margin-left: 4px; font-size: 11px; color: #4ade80; font-weight: 600;">
+        <span id="login-bar-level">Lv.1</span> · <span id="login-bar-xp">0 XP</span>
       </div>
     </div>
-    <div style="display: flex; align-items: center; gap: 10px;">
-      <button onclick="window.apriPopupHubImpostazioni()" class="text-gray-400 hover:text-white text-sm cursor-pointer" title="Impostazioni">⚙️</button>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <button onclick="window.apriPopupHubImpostazioni()" class="text-gray-400 hover:text-white text-sm cursor-pointer p-1.5 rounded-lg hover:bg-white/5 transition-all" title="Impostazioni">⚙️</button>
       <button onclick="window.eseguiLogout()" class="logout-btn">🚪 Logout</button>
     </div>
   </div>
 
   <!-- SCHERMATA LOGIN -->
-  <div id="schermata-login" class="fixed inset-0 bg-gray-950 z-[999999] flex flex-col justify-center items-center p-6">
-    <div class="max-w-sm w-full bg-gray-800 p-6 rounded-2xl border-2 border-yellow-500 shadow-xl text-center">
-      <span class="text-6xl animate-pulse">🎮</span>
-      <h2 class="text-2xl font-bold text-yellow-400 mt-2">BRESCIA QUEST</h2>
-      <p id="login-subtitle" class="text-gray-400 text-xs mb-4">Inizia la tua avventura urbana</p>
+  <div id="schermata-login" class="fixed inset-0 bg-[#0a0a0f] z-[999999] flex flex-col justify-center items-center p-6">
+    <div class="login-box max-w-sm w-full p-8 rounded-3xl text-center animate-scaleIn">
+      <div class="game-icon text-7xl mb-3">🎮</div>
+      <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">BRESCIA QUEST</h2>
+      <p id="login-subtitle" class="text-gray-400 text-xs mt-1 mb-6 font-medium tracking-wider">INIZIA LA TUA AVVENTURA URBANA</p>
 
-      <div class="flex bg-gray-900 p-1 rounded-xl mb-4 border border-gray-700">
-        <button id="tab-accedi" onclick="switchAuthTab('accedi')" class="w-1/2 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-950 transition-colors cursor-pointer">ACCEDI</button>
-        <button id="tab-registrati" onclick="switchAuthTab('registrati')" class="w-1/2 py-2 text-sm font-bold rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer">REGISTRATI</button>
+      <div class="tab-container flex mb-6">
+        <button id="tab-accedi" onclick="switchAuthTab('accedi')" class="tab-btn active flex-1">ACCEDI</button>
+        <button id="tab-registrati" onclick="switchAuthTab('registrati')" class="tab-btn inactive flex-1">REGISTRATI</button>
       </div>
 
       <form id="form-accedi" onsubmit="window.gestisciAccedi(event)" class="text-left space-y-4">
         <div>
-          <label id="login-accedi-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
-          <input type="email" id="accedi-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="login-accedi-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Indirizzo Email</label>
+          <input type="email" id="accedi-email" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
         </div>
         <div>
-          <label id="login-accedi-password-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
-          <input type="password" id="accedi-password" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="login-accedi-password-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Password</label>
+          <input type="password" id="accedi-password" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
         </div>
         <div class="text-right">
-          <button id="login-forgot-password" type="button" onclick="mostraRecuperoPassword()" class="text-xs text-yellow-400 hover:underline cursor-pointer">Hai dimenticato la password?</button>
+          <button id="login-forgot-password" type="button" onclick="mostraRecuperoPassword()" class="text-xs text-yellow-400 hover:text-yellow-300 transition-colors font-medium">Hai dimenticato la password?</button>
         </div>
-        <button id="login-submit-btn" type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
+        <button id="login-submit-btn" type="submit" class="btn-primary w-full text-center">
           ENTRA NEL GIOCO 🚀
         </button>
       </form>
 
       <form id="form-registrati" onsubmit="window.gestisciRegistrazione(event)" class="text-left space-y-4 hidden">
         <div>
-          <label id="register-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email</label>
-          <input type="email" id="login-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="register-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Indirizzo Email</label>
+          <input type="email" id="login-email" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
         </div>
         <div>
-          <label id="register-password-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Password</label>
-          <input type="password" id="login-password" required placeholder="Inserisci la tua password" oninput="validaPasswordInTempoReale()" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="register-password-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Password</label>
+          <input type="password" id="login-password" required placeholder="Inserisci la tua password" oninput="validaPasswordInTempoReale()" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
           
-          <div class="mt-2 space-y-1 text-[11px]">
-            <div id="req-lunghezza" class="text-red-400 flex items-center gap-1 transition-colors duration-200">
+          <div class="mt-3 space-y-1.5 text-[11px]">
+            <div id="req-lunghezza" class="text-red-400 flex items-center gap-2 transition-colors duration-200">
               <span id="icon-lunghezza">✕</span> Tra 6 e 15 caratteri
             </div>
-            <div id="req-maiuscola" class="text-red-400 flex items-center gap-1 transition-colors duration-200">
+            <div id="req-maiuscola" class="text-red-400 flex items-center gap-2 transition-colors duration-200">
               <span id="icon-maiuscola">✕</span> Almeno una lettera maiuscola
             </div>
-            <div id="req-numero" class="text-red-400 flex items-center gap-1 transition-colors duration-200">
+            <div id="req-numero" class="text-red-400 flex items-center gap-2 transition-colors duration-200">
               <span id="icon-numero">✕</span> Almeno un numero (0-9)
             </div>
-            <div id="req-speciale" class="text-red-400 flex items-center gap-1 transition-colors duration-200">
+            <div id="req-speciale" class="text-red-400 flex items-center gap-2 transition-colors duration-200">
               <span id="icon-speciale">✕</span> Almeno un carattere speciale (!, @, #, $, ?, etc.)
             </div>
           </div>
         </div>
         <div>
-          <label id="register-name-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Nome del Player</label>
-          <input type="text" id="login-nome" required minlength="3" maxlength="12" placeholder="Max 12 caratteri" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="register-name-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Nome del Player</label>
+          <input type="text" id="login-nome" required minlength="3" maxlength="12" placeholder="Max 12 caratteri" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
         </div>
         <div>
-          <label id="register-gender-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Seleziona Genere Avatar</label>
-          <select id="login-genere" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="register-gender-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Seleziona Genere Avatar</label>
+          <select id="login-genere" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all appearance-none">
             <option value="" disabled selected>Scegli il tuo stile...</option>
             <option value="Esploratore">Esploratore 🧑‍🚀</option>
             <option value="Esploratrice">Esploratrice 👩‍🚀</option>
           </select>
         </div>
-        <button id="register-submit-btn" type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
+        <button id="register-submit-btn" type="submit" class="btn-primary w-full text-center">
           CREA ACCOUNT 🌟
         </button>
       </form>
@@ -248,21 +636,21 @@
   </div>
 
   <!-- SCHERMATA RECUPERO PASSWORD -->
-  <div id="schermata-recupero" class="fixed inset-0 bg-gray-950 z-[999999] flex flex-col justify-center items-center p-6 hidden">
-    <div class="max-w-sm w-full bg-gray-800 p-6 rounded-2xl border-2 border-yellow-500 shadow-xl text-center">
-      <span class="text-5xl">🔑</span>
-      <h2 id="recovery-title" class="text-2xl font-bold text-yellow-400 mt-2">RECUPERO PASSWORD</h2>
-      <p id="recovery-subtitle" class="text-gray-400 text-xs mb-6">Inserisci la tua email per ricevere il link di reimpostazione</p>
+  <div id="schermata-recupero" class="fixed inset-0 bg-[#0a0a0f] z-[999999] flex flex-col justify-center items-center p-6 hidden">
+    <div class="login-box max-w-sm w-full p-8 rounded-3xl text-center animate-scaleIn">
+      <span class="text-5xl animate-float block mb-2">🔑</span>
+      <h2 id="recovery-title" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">RECUPERO PASSWORD</h2>
+      <p id="recovery-subtitle" class="text-gray-400 text-xs mt-1 mb-6">Inserisci la tua email per ricevere il link di reimpostazione</p>
 
       <form id="form-recupero" onsubmit="window.gestisciRecupero(event)" class="text-left space-y-4">
         <div>
-          <label id="recovery-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Indirizzo Email dell'account</label>
-          <input type="email" id="recupero-email" required class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2.5 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="recovery-email-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Indirizzo Email dell'account</label>
+          <input type="email" id="recupero-email" required class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
         </div>
-        <button id="recovery-submit-btn" type="submit" class="w-full bg-yellow-500 text-gray-950 font-bold py-3 rounded-xl shadow-lg hover:bg-yellow-400 transition-colors cursor-pointer">
+        <button id="recovery-submit-btn" type="submit" class="btn-primary w-full text-center">
           INVIA EMAIL DI RECUPERO 📨
         </button>
-        <button id="recovery-back-btn" type="button" onclick="tornaAlLogin()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
+        <button id="recovery-back-btn" type="button" onclick="tornaAlLogin()" class="btn-secondary w-full text-center">
           Annulla e Torna Indietro
         </button>
       </form>
@@ -271,16 +659,16 @@
 
   <!-- POPUP IMPOSTAZIONI -->
   <div id="popup-impostazioni-hub" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden" style="z-index: 9999999 !important;">
-    <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="hub-title" class="text-lg font-bold text-yellow-400">⚙️ Impostazioni profilo</h3>
-        <button onclick="window.chiudiPopupHubImpostazioni()" class="text-gray-400 hover:text-white text-lg cursor-pointer">✕</button>
+    <div class="popup-content max-w-sm w-full p-6 rounded-2xl border border-yellow-400/20 animate-scaleIn">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="hub-title" class="text-lg font-black text-yellow-400">⚙️ Impostazioni profilo</h3>
+        <button onclick="window.chiudiPopupHubImpostazioni()" class="text-gray-400 hover:text-white text-lg p-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer">✕</button>
       </div>
       <div class="space-y-3">
-        <button id="hub-general-btn" onclick="window.apriPopupImpostazioniGenerali()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer text-sm text-left px-4">
+        <button id="hub-general-btn" onclick="window.apriPopupImpostazioniGenerali()" class="w-full glass-light text-white font-bold py-3.5 rounded-xl transition-all hover:bg-white/10 text-sm text-left px-4 cursor-pointer">
           🌐 Impostazioni generali
         </button>
-        <button id="hub-avatar-btn" onclick="window.apriPopupAvatarCustomization()" class="w-full bg-gray-700 hover:bg-gray-600 text-white font-bold py-3 rounded-xl transition-colors cursor-pointer text-sm text-left px-4">
+        <button id="hub-avatar-btn" onclick="window.apriPopupAvatarCustomization()" class="w-full glass-light text-white font-bold py-3.5 rounded-xl transition-all hover:bg-white/10 text-sm text-left px-4 cursor-pointer">
           🧑‍🚀 Personalizzazione avatar
         </button>
       </div>
@@ -289,23 +677,23 @@
 
   <!-- POPUP IMPOSTAZIONI GENERALI -->
   <div id="popup-impostazioni-generali" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden" style="z-index: 9999999 !important;">
-    <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="general-title" class="text-lg font-bold text-yellow-400">🌐 Impostazioni generali</h3>
-        <button onclick="window.ritornaAlMenuImpostazioni()" class="text-gray-400 hover:text-white text-lg cursor-pointer">✕</button>
+    <div class="popup-content max-w-sm w-full p-6 rounded-2xl border border-yellow-400/20 animate-scaleIn">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="general-title" class="text-lg font-black text-yellow-400">🌐 Impostazioni generali</h3>
+        <button onclick="window.ritornaAlMenuImpostazioni()" class="text-gray-400 hover:text-white text-lg p-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer">✕</button>
       </div>
       <div class="space-y-4">
         <div>
-          <label id="general-language-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Lingua</label>
-          <select id="general-language-select" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="general-language-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Lingua</label>
+          <select id="general-language-select" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all appearance-none">
             <option value="it">Italiano</option>
             <option value="en">English</option>
           </select>
         </div>
-        <button id="btn-salva-impostazioni-generali" type="button" onclick="window.salvaImpostazioniGenerali()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm">
+        <button id="btn-salva-impostazioni-generali" type="button" onclick="window.salvaImpostazioniGenerali()" class="btn-success w-full text-center">
           Salva impostazioni
         </button>
-        <button id="general-back-btn" type="button" onclick="window.ritornaAlMenuImpostazioni()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
+        <button id="general-back-btn" type="button" onclick="window.ritornaAlMenuImpostazioni()" class="btn-secondary w-full text-center">
           Indietro
         </button>
       </div>
@@ -314,34 +702,34 @@
 
   <!-- POPUP PROFILO -->
   <div id="popup-profilo" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden" style="z-index: 9999999 !important;">
-    <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full border-2 border-yellow-500 shadow-2xl">
-      <div class="flex justify-between items-center mb-4">
-        <h3 id="profile-title" class="text-lg font-bold text-yellow-400">🧑‍🚀 Personalizzazione avatar</h3>
-        <button onclick="window.chiudiPopupProfilo()" class="text-gray-400 hover:text-white text-lg cursor-pointer">✕</button>
+    <div class="popup-content max-w-sm w-full p-6 rounded-2xl border border-yellow-400/20 animate-scaleIn">
+      <div class="flex justify-between items-center mb-6">
+        <h3 id="profile-title" class="text-lg font-black text-yellow-400">🧑‍🚀 Personalizzazione avatar</h3>
+        <button onclick="window.chiudiPopupProfilo()" class="text-gray-400 hover:text-white text-lg p-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer">✕</button>
       </div>
       <div class="space-y-4">
-        <button id="profile-back-btn" type="button" onclick="window.ritornaAlMenuImpostazioni()" class="w-full bg-transparent border border-gray-600 text-gray-400 hover:text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm text-center block">
+        <button id="profile-back-btn" type="button" onclick="window.ritornaAlMenuImpostazioni()" class="btn-secondary w-full text-center">
           Torna al menu impostazioni
         </button>
         <div>
-          <label id="profile-name-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Modifica Nome</label>
-          <input type="text" id="edit-nome" maxlength="12" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="profile-name-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Modifica Nome</label>
+          <input type="text" id="edit-nome" maxlength="12" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all">
         </div>
         <div>
-          <label id="profile-gender-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Modifica Genere Avatar</label>
-          <select id="edit-genere" class="w-full bg-gray-700 border border-gray-600 rounded-lg p-2 text-sm focus:outline-none focus:border-yellow-400 text-white">
+          <label id="profile-gender-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Modifica Genere Avatar</label>
+          <select id="edit-genere" class="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-sm focus:outline-none focus:border-yellow-400 text-white transition-all appearance-none">
             <option value="Esploratore">Esploratore 🧑‍🚀</option>
             <option value="Esploratrice">Esploratrice 👩‍🚀</option>
           </select>
         </div>
         <div>
-          <label id="profile-photo-label" class="block text-xs font-bold uppercase text-gray-400 mb-1">Foto Profilo</label>
-          <div class="flex items-center gap-3 mb-2">
-            <div id="edit-avatar-preview" class="w-12 h-12 bg-gray-700 rounded-full overflow-hidden flex items-center justify-center text-xl font-bold">👤</div>
-            <input type="file" id="edit-foto-file" accept="image/*" class="text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-yellow-500 file:text-gray-950 hover:file:bg-yellow-400 cursor-pointer">
+          <label id="profile-photo-label" class="block text-xs font-bold uppercase text-gray-400 mb-1.5 tracking-wider">Foto Profilo</label>
+          <div class="flex items-center gap-4">
+            <div id="edit-avatar-preview" class="w-14 h-14 rounded-full overflow-hidden flex items-center justify-center text-2xl bg-gradient-to-br from-yellow-400/20 to-yellow-600/20 border-2 border-yellow-400/30">👤</div>
+            <input type="file" id="edit-foto-file" accept="image/*" class="text-xs text-gray-400 file:mr-3 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-gradient-to-r file:from-yellow-400 file:to-yellow-500 file:text-gray-950 hover:file:scale-105 file:transition-all cursor-pointer">
           </div>
         </div>
-        <button id="btn-salva-profilo" type="button" onclick="window.salvaModificheProfilo()" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-2 rounded-xl transition-colors cursor-pointer text-sm">
+        <button id="btn-salva-profilo" type="button" onclick="window.salvaModificheProfilo()" class="btn-success w-full text-center">
           Salva Modifiche
         </button>
       </div>
@@ -354,137 +742,223 @@
   </div>
 
   <!-- FILTRI -->
-  <nav id="filtri-nav" class="bg-gray-850 p-2 flex gap-2 justify-center z-10 border-b border-gray-800 hidden">
-    <button id="btn-filtro-tutti" onclick="window.filtraCategoria('tutti')" class="bg-gray-700 hover:bg-gray-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer outline outline-3 outline-yellow-400">🌍 Tutti</button>
-    <button id="btn-filtro-monumento" onclick="window.filtraCategoria('monumento')" class="bg-amber-700 hover:bg-amber-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer">🏛️ Monumenti</button>
-    <button id="btn-filtro-parco" onclick="window.filtraCategoria('parco')" class="bg-green-700 hover:bg-green-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer">🌳 Parchi</button>
-    <button id="btn-filtro-supermercato" onclick="window.filtraCategoria('supermercato')" class="bg-blue-700 hover:bg-blue-600 text-xs font-bold px-3 py-1 rounded-full cursor-pointer">🛒 Spesa</button>
+  <nav id="filtri-nav" class="bg-[#0a0a0f]/90 backdrop-blur-xl p-2 flex gap-1.5 justify-center z-10 border-b border-white/5 hidden">
+    <button id="btn-filtro-tutti" onclick="window.filtraCategoria('tutti')" class="filter-btn active bg-yellow-400/20 text-yellow-400 border-yellow-400/30">🌍 Tutti</button>
+    <button id="btn-filtro-monumento" onclick="window.filtraCategoria('monumento')" class="filter-btn bg-amber-600/20 text-amber-400 hover:bg-amber-600/30">🏛️ Monumenti</button>
+    <button id="btn-filtro-parco" onclick="window.filtraCategoria('parco')" class="filter-btn bg-green-600/20 text-green-400 hover:bg-green-600/30">🌳 Parchi</button>
+    <button id="btn-filtro-supermercato" onclick="window.filtraCategoria('supermercato')" class="filter-btn bg-blue-600/20 text-blue-400 hover:bg-blue-600/30">🛒 Spesa</button>
   </nav>
 
   <!-- POPUP SCOPERTA -->
   <div id="popup-scoperta" class="fixed inset-0 bg-black/80 flex items-center justify-center p-4 hidden" style="z-index: 9999999 !important;">
-    <div class="bg-gray-800 p-6 rounded-2xl max-w-sm w-full text-center border-2 border-yellow-400 shadow-2xl">
-      <span class="text-5xl">🏆</span>
-      <h3 id="popup-badge-title" class="text-2xl font-bold text-yellow-400 mt-2">BADGE SBLOCCATO!</h3>
-      <p id="popup-nome" class="text-xl font-semibold mt-1">Nome Posto</p>
-      <p id="popup-desc" class="text-gray-300 text-sm mt-3 px-2"></p>
-      <div class="mt-4 text-green-400 font-bold font-mono text-lg">+100 XP GUADAGNATI!</div>
-      <button id="popup-continue-btn" onclick="window.chiudiPopupScoperta()" class="mt-5 w-full bg-yellow-500 text-gray-950 font-bold py-2 rounded-xl cursor-pointer hover:bg-yellow-400">
+    <div class="popup-content max-w-sm w-full p-8 rounded-2xl border border-yellow-400/20 text-center animate-scaleIn">
+      <span class="text-6xl animate-float block mb-2">🏆</span>
+      <h3 id="popup-badge-title" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">BADGE SBLOCCATO!</h3>
+      <p id="popup-nome" class="text-xl font-bold mt-2 text-white">Nome Posto</p>
+      <p id="popup-desc" class="text-gray-300 text-sm mt-3 px-2 leading-relaxed"></p>
+      <div class="mt-4 text-green-400 font-black text-lg">+100 XP GUADAGNATI!</div>
+      <button id="popup-continue-btn" onclick="window.chiudiPopupScoperta()" class="btn-primary w-full mt-5 text-center">
         Continua la Caccia
       </button>
     </div>
   </div>
 
   <!-- BOTTOM NAV -->
-  <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 h-16 bg-gray-900 border-t border-gray-800 flex justify-around items-center z-[9999] hidden">
-    <button onclick="window.apriSchermata('amici')" class="flex flex-col items-center justify-center text-blue-400 hover:text-blue-300 transition-colors">
-      <span class="text-2xl">👥</span>
-      <span class="text-[10px] font-bold">Amici</span>
+  <nav id="bottom-nav" class="hidden">
+    <button onclick="window.apriSchermata('amici')" class="active-amici" id="nav-amici">
+      <span class="nav-icon">👥</span>
+      <span class="nav-label">Amici</span>
     </button>
-    <button onclick="window.apriSchermata('mappa')" class="flex flex-col items-center justify-center text-yellow-400 hover:text-yellow-300 transition-colors">
-      <span class="text-2xl">🌍</span>
-      <span class="text-[10px] font-bold">Mappa</span>
+    <button onclick="window.apriSchermata('clan')" class="active-clan" id="nav-clan">
+      <span class="nav-icon">🛡️</span>
+      <span class="nav-label">Clan</span>
     </button>
-    <button onclick="window.apriSchermata('wishlist')" class="flex flex-col items-center justify-center text-yellow-500 hover:text-yellow-400 transition-colors">
-      <span class="text-2xl">📋</span>
-      <span class="text-[10px] font-bold">Wishlist</span>
+    <button onclick="window.apriSchermata('mappa')" class="active-mappa" id="nav-mappa">
+      <span class="nav-icon">🌍</span>
+      <span class="nav-label">Mappa</span>
+    </button>
+    <button onclick="window.apriSchermata('wishlist')" class="active-wishlist" id="nav-wishlist">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Wishlist</span>
     </button>
   </nav>
 
+  <!-- POPUP TUTORIAL VIDEO -->
+  <div id="popup-tutorial" class="hidden fixed inset-0 bg-black/90 flex items-center justify-center p-4 z-[60]">
+    <div class="tutorial-box w-full max-w-md rounded-2xl p-4 flex flex-col gap-4 shadow-2xl relative animate-scaleIn">
+      
+      <div class="flex justify-between items-center">
+        <h3 class="text-xs font-black tracking-wider text-blue-400">📖 GUIDA RAPIDA DI GIOCO</h3>
+        <button onclick="window.chiudiESaltaTutorial()" class="text-gray-400 hover:text-white text-xs font-bold bg-white/5 px-3 py-1.5 rounded-lg cursor-pointer transition-all hover:bg-white/10">
+          Salta ✕
+        </button>
+      </div>
+
+      <div class="w-full aspect-[9/16] max-h-[60vh] bg-black rounded-xl overflow-hidden border border-white/10 relative flex items-center justify-center">
+        <video id="video-tutorial" class="w-full h-full object-cover" controls playsinline>
+          <source src="tutorial.mp4" type="video/mp4">
+          Il tuo browser non supporta i video.
+        </video>
+      </div>
+
+      <p class="text-[11px] text-gray-400 text-center leading-relaxed">
+        Scopri come fondare un <strong class="text-purple-400">Clan</strong>, usare la <strong class="text-blue-400">Chat live con le spunte blu</strong> e dominare la mappa sbloccando i <strong class="text-yellow-400">Monumenti</strong>!
+      </p>
+    </div>
+  </div>
+
+  <!-- POPUP CLAN UNICO -->
+  <div id="popup-clan" class="hidden fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" style="z-index: 100000 !important;">
+    <div class="popup-content w-full max-w-lg h-[80vh] rounded-2xl p-5 flex flex-col justify-between overflow-hidden border border-purple-400/20 animate-scaleIn">
+      
+      <div class="flex justify-between items-center pb-3 border-b border-white/5">
+        <h2 id="titolo-sezione-clan" class="text-sm font-black tracking-wider text-purple-400">🛡️ SQUADRE & CLAN</h2>
+        <button onclick="window.chiudiPopupClan()" class="text-gray-400 hover:text-white font-bold text-sm p-1 rounded-lg hover:bg-white/5 transition-all cursor-pointer">✕</button>
+      </div>
+
+      <!-- SCHERMATA SENZA CLAN -->
+      <div id="schermata-no-clan" class="flex-grow flex flex-col gap-4 overflow-y-auto pt-3">
+        <div class="card-purple p-4 rounded-xl">
+          <p class="text-[11px] text-gray-400 font-bold mb-2">✨ FONDA UN NUOVO CLAN</p>
+          <div class="flex gap-2">
+            <input type="text" id="input-nome-clan" placeholder="Nome del tuo Clan..." class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-all">
+            <button onclick="window.creaNuovoClan()" class="btn-purple text-xs px-4 py-2.5">Crea</button>
+          </div>
+        </div>
+        
+        <div class="card-purple p-4 rounded-xl flex flex-col flex-grow overflow-hidden">
+          <p class="text-[11px] text-gray-400 font-bold mb-2">🌐 CLAN ATTIVI (MAX 30 MEMBRI)</p>
+          <div id="lista-clan-disponibili" class="flex flex-col gap-2 flex-grow overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+      <!-- SCHERMATA CON CLAN -->
+      <div id="schermata-si-clan" class="hidden flex-grow flex flex-col overflow-hidden pt-3">
+        <div id="clan-header" class="card-purple p-3 rounded-xl mb-3 text-center">
+          <span id="clan-nome-display" class="text-sm font-bold text-purple-400">Nome Clan</span>
+          <span id="clan-membri-count" class="text-xs text-gray-400 ml-2">0/30 membri</span>
+        </div>
+
+        <div class="tab-container flex p-1 mb-3 justify-between items-center">
+          <div class="flex gap-1">
+            <button id="btn-clan-tab-classifica" onclick="window.switchClanTab('classifica')" class="tab-btn active text-xs py-1.5 px-3.5">Classifica</button>
+            <button id="btn-clan-tab-feed" onclick="window.switchClanTab('feed')" class="tab-btn inactive text-xs py-1.5 px-3.5">Bacheca</button>
+          </div>
+          <div id="opzioni-gestione-clan"></div>
+        </div>
+
+        <div class="flex-grow overflow-y-auto mb-3 space-y-2 pr-1">
+          <div id="lista-clan-classifica" class="space-y-1.5"></div>
+          <div id="lista-clan-feed" class="hidden space-y-1.5"></div>
+        </div>
+
+        <div id="sezione-invia-messaggio-clan" class="hidden flex flex-col gap-2 pt-3 border-t border-white/5">
+          <div class="flex gap-2">
+            <input type="text" id="input-messaggio-clan" placeholder="Scrivi al clan..." class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-purple-500 transition-all">
+            <button onclick="window.inviaMessaggioClan()" class="btn-purple text-xs px-4 py-2.5">Invia ✉️</button>
+          </div>
+          <button onclick="window.cancellaMessaggiClan()" class="w-full text-red-400/70 hover:text-red-400 border border-red-500/20 hover:border-red-500/40 py-2 rounded-xl text-[10px] cursor-pointer transition-all font-medium">
+            🗑️ Svuota Chat Clan
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
   <!-- SCHERMATA AMICI -->
   <div id="schermata-amici" class="schermata-full hidden">
-    <div class="flex justify-between items-end mb-6 border-b border-gray-800 pb-4">
+    <div class="flex justify-between items-end mb-6 border-b border-white/5 pb-4">
       <div>
-        <h2 id="titolo-sezione-amici" class="text-xl font-bold text-blue-400 flex items-center gap-2">
-          👥 Il mio Clan
-          <span class="text-xs bg-gray-800 text-gray-400 px-2 py-0.5 rounded-full font-mono font-normal" id="conteggio-clan">0 utenti</span>
+        <h2 id="titolo-sezione-amici" class="text-xl font-black text-blue-400 flex items-center gap-2">
+          👥 I miei Amici
+          <span class="text-xs bg-blue-400/10 text-blue-300 px-2.5 py-0.5 rounded-full font-mono font-normal" id="conteggio-amici">0 utenti</span>
         </h2> 
         <p id="sottotitolo-sezione-amici" class="text-[11px] text-gray-400 mt-0.5">Classifica dei punteggi</p>
       </div>
-      <div class="flex items-center gap-1 bg-gray-950 p-1 rounded-xl border border-gray-800 shadow-inner">
-        <button id="btn-tab-classifica" onclick="window.switchAmiciTab('classifica')" class="bg-blue-600 text-white font-bold text-[11px] px-3 py-2 rounded-lg cursor-pointer transition-all uppercase tracking-wider flex items-center gap-1">◀ Clan</button>
-        <button id="btn-tab-feed" onclick="window.switchAmiciTab('feed')" class="bg-gray-700 text-gray-400 font-bold text-[11px] px-3 py-2 rounded-lg cursor-pointer transition-all uppercase tracking-wider flex items-center gap-1 hover:text-white">Attività ▶</button>
+      <div class="tab-container flex p-1">
+        <button id="btn-tab-classifica" onclick="window.switchAmiciTab('classifica')" class="tab-btn active text-[11px] px-3 py-2">◀ Classifica</button>
+        <button id="btn-tab-feed" onclick="window.switchAmiciTab('feed')" class="tab-btn inactive text-[11px] px-3 py-2">Chat ▶</button>
       </div>
     </div>
 
-    <div id="sezione-aggiungi-amico" class="mb-4 bg-gray-900/60 p-3 rounded-xl border border-gray-700">
-      <p class="text-[11px] text-gray-400 mb-1.5 font-semibold">🤝 AGGIUNGI UN COMPAGNO DI SQUADRA</p>
+    <div id="sezione-aggiungi-amico" class="card-blue p-4 rounded-xl mb-4">
+      <p class="text-[11px] text-gray-400 mb-2 font-semibold">🤝 AGGIUNGI UN AMICO</p>
       <div class="flex gap-2">
-        <input type="text" id="input-codice-amico" placeholder="Incolla il Codice Squadra..." class="flex-grow bg-gray-800 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500">
-        <button onclick="window.aggiungiAmico()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-3 py-1.5 rounded-lg text-xs transition-colors cursor-pointer">Aggiungi</button>
+        <input type="text" id="input-codice-amico" placeholder="Incolla il Codice Amico..." class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all">
+        <button onclick="window.aggiungiAmico()" class="btn-success text-xs px-4 py-2.5">Aggiungi</button>
       </div>
     </div>
 
     <!-- SEZIONE INVIO MESSAGGIO -->
-    <div id="sezione-invia-messaggio" class="hidden mb-4">
+    <div id="sezione-invia-messaggio" class="hidden mb-4 flex flex-col gap-2">
       <div class="flex gap-2">
-        <input type="text" id="input-messaggio-chat" placeholder="Scrivi un messaggio alla squadra..." class="flex-grow bg-gray-900 border border-gray-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500">
-        <button onclick="window.inviaMessaggioChat()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors cursor-pointer shadow-md">
-          Invia ✉️
-        </button>
+        <input type="text" id="input-messaggio-chat" placeholder="Scrivi un messaggio agli amici..." class="flex-grow bg-white/5 border border-white/10 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-blue-500 transition-all">
+        <button onclick="window.inviaMessaggioChat()" class="btn-primary text-xs px-4 py-2.5">Invia ✉️</button>
       </div>
-      <div class="flex gap-2 mt-2">
-        <button onclick="window.marcaIstantaneaTuttiMessaggi()" class="bg-green-700/50 hover:bg-green-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-colors cursor-pointer">
+      <div class="flex gap-2 mt-1">
+        <button onclick="window.marcaIstantaneaTuttiMessaggi()" class="flex-1 bg-green-500/20 hover:bg-green-500/30 text-green-400 font-bold px-3 py-2 rounded-xl text-[10px] transition-colors cursor-pointer">
           👁️ Segna tutti come letti
         </button>
-        <button onclick="window.eliminaTuttiMessaggiChat()" class="bg-red-700/50 hover:bg-red-700 text-white font-bold px-3 py-1 rounded-lg text-[10px] transition-colors cursor-pointer">
-          🗑️ Elimina tutti i miei messaggi
+        <button onclick="window.eliminaTuttiMessaggiChat()" class="flex-1 bg-red-500/20 hover:bg-red-500/30 text-red-400 font-bold px-3 py-2 rounded-xl text-[10px] transition-colors cursor-pointer">
+          🗑️ Solo i miei
         </button>
       </div>
+      <button onclick="window.cancellaTuttiIMessaggi()" class="w-full bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 font-semibold py-2 rounded-xl text-[11px] transition-all cursor-pointer text-center mt-1">
+        🧹 Piazza Pulita - Elimina tutti i messaggi
+      </button>
     </div>
 
-    <!-- CODICE SQUADRA -->
-    <div id="box-squadra" class="bg-gray-800/50 border border-gray-700/60 p-4 rounded-2xl mb-6">
-      <div class="flex justify-between items-center"> 
+    <!-- CODICE AMICO -->
+    <div id="box-codice" class="card-gold p-4 rounded-2xl mb-6">
+      <div class="flex justify-between items-center flex-wrap gap-2"> 
         <div>
-          <span class="text-gray-400 block font-bold uppercase text-[10px]">Il tuo Codice Squadra:</span>
-          <span id="mio-codice-txt" class="font-mono font-semibold text-yellow-400 tracking-wider">Caricamento...</span>
+          <span class="text-gray-400 block font-bold uppercase text-[10px] tracking-wider">Il tuo Codice Amico:</span>
+          <span id="mio-codice-txt" class="font-mono font-semibold text-yellow-400 tracking-wider text-sm">Caricamento...</span>
         </div>
         <div class="flex gap-2">
-          <button onclick="window.copiaCodiceAmico()" class="bg-gray-700 hover:bg-gray-600 px-3 py-1.5 rounded-lg text-white font-bold text-xs cursor-pointer">📋 Copia</button>
-          <button onclick="window.condividiCodiceAmico()" class="bg-yellow-600 hover:bg-yellow-500 px-3 py-1.5 rounded-lg text-gray-950 font-bold text-xs cursor-pointer">🔗 Condividi</button> 
+          <button onclick="window.copiaCodiceAmico()" class="glass-light text-white font-bold text-xs px-3 py-2 rounded-xl hover:bg-white/10 transition-all cursor-pointer">📋 Copia</button>
+          <button onclick="window.condividiCodiceAmico()" class="btn-primary text-xs px-3 py-2">🔗 Condividi</button> 
         </div> 
       </div> 
     </div> 
 
     <div id="pannello-classifica">
-      <h4 class="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center gap-1">🏆 Classifica della Squadra (Tu + Amici)</h4>
+      <h4 class="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center gap-1 tracking-wider">🏆 Classifica (Tu + Amici)</h4>
       <div id="lista-amici-classifica" class="space-y-2 overflow-y-auto flex-grow pr-1 text-xs">
-        <p class="text-gray-500 text-center py-4 text-sm">Nessun amico nel clan. Condividi il tuo codice!</p>
+        <p class="text-gray-500 text-center py-8 text-sm">Nessun amico. Condividi il tuo codice!</p>
       </div>
     </div>
 
     <div id="pannello-feed" class="hidden">
-      <h4 class="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center gap-1">⚡ Bacheca & Successi della Squadra</h4>
+      <h4 class="text-xs font-bold uppercase text-gray-400 mb-3 flex items-center gap-1 tracking-wider">⚡ Chat & Attività</h4>
       <div id="lista-amici-feed" class="space-y-3 overflow-y-auto flex-grow pr-1">
-        <p class="text-gray-500 text-center py-4 text-sm">Nessun successo o messaggio da mostrare per questa squadra.</p>
+        <p class="text-gray-500 text-center py-8 text-sm">Nessun messaggio o attività da mostrare.</p>
       </div>
     </div>
   </div>
 
   <!-- SCHERMATA WISHLIST -->
   <div id="schermata-wishlist" class="schermata-full hidden">
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-bold text-yellow-400">📋 La mia Wishlist</h2>
-      <div class="flex gap-2">
-        <select id="filtro-wishlist" onchange="window.filtraWishlist(this.value)" class="bg-gray-700 border border-gray-600 rounded-lg px-3 py-1.5 text-xs font-bold text-white focus:outline-none focus:border-yellow-400 cursor-pointer">
-          <option value="tutti">🌍 Tutti</option>
-          <option value="monumento">🏛️ Monumenti</option>
-          <option value="parco">🌳 Parchi</option>
-          <option value="supermercato">🛒 Supermercati</option>
-        </select>
-      </div>
+    <div class="flex justify-between items-center mb-6 flex-wrap gap-2">
+      <h2 class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">📋 La mia Wishlist</h2>
+      <select id="filtro-wishlist" onchange="window.filtraWishlist(this.value)" class="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-yellow-400 cursor-pointer appearance-none">
+        <option value="tutti">🌍 Tutti</option>
+        <option value="monumento">🏛️ Monumenti</option>
+        <option value="parco">🌳 Parchi</option>
+        <option value="supermercato">🛒 Supermercati</option>
+      </select>
     </div>
     <div id="lista-monumenti-full" class="space-y-3 overflow-y-auto flex-grow"></div>
   </div>
 
   <!-- WISHLIST SIDEBAR -->
-  <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 bg-gray-950 border-l border-gray-800 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full" style="z-index: 999999 !important;">
+  <div id="wishlist-sidebar" class="fixed top-0 right-0 h-full w-72 border-l border-white/5 transition-transform duration-300 ease-in-out overflow-y-auto p-6 shadow-2xl translate-x-full" style="z-index: 999999 !important;">
     <div class="flex flex-col gap-4 mb-6 mt-2 relative" style="z-index: 1000000 !important;">
-      <button id="wishlist-close-btn" onclick="window.toggleWishlist();" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2.5 px-4 rounded-xl text-xs transition-colors border-none tracking-wider block text-center shadow-lg cursor-pointer relative" style="z-index: 1000005 !important;">
+      <button id="wishlist-close-btn" onclick="window.toggleWishlist();" class="btn-primary w-full text-xs py-3 text-center relative" style="z-index: 1000005 !important;">
         ✕ CHIUDI ELENCO
       </button>
-      <h2 id="wishlist-title" class="text-xl font-bold text-yellow-400 mt-2">⚔️ La mia Wishlist</h2>
+      <h2 id="wishlist-title" class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">⚔️ La mia Wishlist</h2>
     </div>
     <div id="lista-monumenti" class="space-y-3"></div>
   </div>
@@ -496,6 +970,7 @@
     window.apriSchermata = function(tipo) {
       document.getElementById('schermata-amici').classList.add('hidden');
       document.getElementById('schermata-wishlist').classList.add('hidden');
+      document.getElementById('popup-clan').classList.add('hidden');
       
       const loginBar = document.getElementById('login-bar');
       const mapContainer = document.getElementById('map-container');
@@ -513,17 +988,16 @@
       
       const bottoniNav = document.querySelectorAll("#bottom-nav button");
       bottoniNav.forEach(btn => {
-        btn.classList.remove("text-blue-400", "text-yellow-400", "text-yellow-500");
-        btn.classList.add("text-gray-400");
+        btn.className = '';
+        btn.classList.add('flex', 'flex-col', 'items-center', 'justify-center', 'p-2', 'rounded-xl', 'transition-all', 'bg-transparent', 'border-none', 'cursor-pointer', 'relative', 'min-w-[56px]');
       });
 
+      // Aggiungi classi specifiche per ogni bottone
       if (tipo === 'mappa') {
-        bottoniNav[1].classList.remove("text-gray-400");
-        bottoniNav[1].classList.add("text-yellow-400");
+        document.getElementById('nav-mappa').classList.add('active-mappa');
       } else if (tipo === 'amici') {
+        document.getElementById('nav-amici').classList.add('active-amici');
         document.getElementById('schermata-amici').classList.remove('hidden');
-        bottoniNav[0].classList.remove("text-gray-400");
-        bottoniNav[0].classList.add("text-blue-400");
         if (typeof window.aggiornaElencoClassificaAmici === 'function') {
           window.aggiornaElencoClassificaAmici();
         }
@@ -533,10 +1007,15 @@
             window.avviaAscoltoChatRealTime();
           }
         }
+      } else if (tipo === 'clan') {
+        document.getElementById('nav-clan').classList.add('active-clan');
+        document.getElementById('popup-clan').classList.remove('hidden');
+        if (typeof window.inizializzaSchermataClan === 'function') {
+          window.inizializzaSchermataClan();
+        }
       } else if (tipo === 'wishlist') {
+        document.getElementById('nav-wishlist').classList.add('active-wishlist');
         document.getElementById('schermata-wishlist').classList.remove('hidden');
-        bottoniNav[2].classList.remove("text-gray-400");
-        bottoniNav[2].classList.add("text-yellow-500");
         document.getElementById('filtro-wishlist').value = 'tutti';
         if (typeof window.aggiornaWishlistFull === 'function') {
           window.aggiornaWishlistFull('tutti');
@@ -547,6 +1026,22 @@
     window.filtraCategoria = function(categoria) {
       if (typeof window.aggiornaMappaELista === 'function') {
         window.aggiornaMappaELista(categoria);
+      }
+      // Aggiorna stile filtri
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-yellow-400/20', 'border-yellow-400/30');
+        btn.classList.add('bg-white/5', 'border-transparent');
+      });
+      const btnMap = {
+        'tutti': 'btn-filtro-tutti',
+        'monumento': 'btn-filtro-monumento',
+        'parco': 'btn-filtro-parco',
+        'supermercato': 'btn-filtro-supermercato'
+      };
+      const activeBtn = document.getElementById(btnMap[categoria]);
+      if (activeBtn) {
+        activeBtn.classList.add('active', 'bg-yellow-400/20', 'border-yellow-400/30');
+        activeBtn.classList.remove('bg-white/5', 'border-transparent');
       }
     };
 
@@ -570,7 +1065,7 @@
       if (!container) return;
       
       if (typeof monumenti === 'undefined') {
-        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>Caricamento luoghi in corso...</p>";
+        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-8 animate-pulse'>Caricamento luoghi in corso...</p>";
         return;
       }
 
@@ -580,7 +1075,7 @@
       }
       
       if (monumentiFiltrati.length === 0) {
-        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>Nessun luogo trovato in questa categoria.</p>";
+        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-8'>Nessun luogo trovato in questa categoria.</p>";
         return;
       }
 
@@ -589,18 +1084,17 @@
         const item = document.createElement('div');
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
         item.id = `monumento-full-${safeId}`;
-        item.className = `p-3 rounded-xl flex justify-between items-center transition-all bg-gray-800 border ${
-          m.scoperto ? 'bg-green-950/40 border-green-500' : 'bg-gray-700/50 border-gray-600'
-        }`;
+        const isScoperto = m.scoperto || false;
+        item.className = `card ${isScoperto ? 'card-green' : 'card'} flex justify-between items-center p-4 rounded-xl transition-all`;
         
         item.innerHTML = `
           <div class="flex-1 pr-2">
-            <p class="font-semibold text-sm ${m.scoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
+            <p class="font-bold text-sm ${isScoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
             <p class="text-[10px] text-gray-400 mt-0.5">${m.desc}</p>
-            <p class="text-xs text-gray-400 font-mono label-distanza-full mt-1">${m.scoperto ? '🏁 Obiettivo Conquistato' : '📍 Distanza: Calcolo in corso...'}</p>
+            <p class="text-xs text-gray-400 font-mono label-distanza-full mt-1">${isScoperto ? '🏁 Obiettivo Conquistato' : '📍 Distanza: Calcolo in corso...'}</p>
           </div>
-          <div class="text-sm font-mono text-gray-400 bg-gray-800 px-2 py-1 rounded-md badge-xp shrink-0">
-            ${m.scoperto ? '✅' : '+100 XP'}
+          <div class="badge-xp shrink-0">
+            ${isScoperto ? '✅' : '+100 XP'}
           </div>
         `;
         container.appendChild(item);
@@ -616,12 +1110,7 @@
       monumenti.forEach(m => {
         const giaScoperto = m.scoperto || false;
         const item = document.createElement("div");
-        
-        if (giaScoperto) {
-          item.className = "p-4 rounded-2xl border-2 border-green-500 bg-green-950/20 flex flex-col gap-3 transition-all shadow-md shadow-green-950/50";
-        } else {
-          item.className = "p-4 rounded-2xl border-2 border-gray-800 bg-gray-900/40 flex flex-col gap-3 transition-all";
-        }
+        item.className = `card ${giaScoperto ? 'card-green' : 'card'} p-4 rounded-xl flex flex-col gap-3 transition-all`;
         
         let iconaCat = m.categoria === 'monumento' ? '🏛️' : (m.categoria === 'parco' ? '🌳' : '🛒');
         let descrizioneLuogo = m.desc ? m.desc : "Nessuna descrizione disponibile per questo luogo.";
@@ -629,7 +1118,7 @@
 
         item.innerHTML = `
           <div class="flex justify-between items-start">
-            <div class="flex items-start gap-2 flex-1">
+            <div class="flex items-start gap-3 flex-1">
               <span class="text-xl">${iconaCat}</span>
               <div class="flex-1">
                 <p class="font-bold text-sm ${giaScoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
@@ -637,14 +1126,14 @@
               </div>
             </div>
           </div>
-          <div class="text-[10px] text-gray-300 px-3 py-2 bg-gray-900/60 rounded-lg border border-gray-800/50">
+          <div class="text-[10px] text-gray-300 px-3 py-2 bg-white/5 rounded-xl border border-white/5">
             ${descrizioneLuogo}
           </div>
           <div class="flex justify-between items-center pt-1">
             <p class="text-[10px] text-gray-500 font-mono">
               ${giaScoperto ? '✅ Scoperto' : '📍 Da Trovare'}
             </p>
-            <span class="text-xs font-mono ${giaScoperto ? 'text-green-400' : 'text-yellow-400'} bg-gray-800/70 px-2.5 py-1 rounded-md font-bold">
+            <span class="badge-xp">
               ${giaScoperto ? '✓' : '+100 XP'}
             </span>
           </div>
@@ -672,37 +1161,15 @@
       const vNumero = /\d/.test(password);
       const vSpeciale = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
 
-      if (vLunghezza) {
-        reqLunghezza.className = "text-green-400 flex items-center gap-1";
-        iconLunghezza.innerText = "✓";
-      } else {
-        reqLunghezza.className = "text-red-400 flex items-center gap-1";
-        iconLunghezza.innerText = "✕";
-      }
+      const updateReq = (el, icon, valid) => {
+        el.className = `${valid ? 'text-green-400' : 'text-red-400'} flex items-center gap-2 transition-colors duration-200`;
+        icon.innerText = valid ? '✓' : '✕';
+      };
 
-      if (vMaiuscola) {
-        reqMaiuscola.className = "text-green-400 flex items-center gap-1";
-        iconMaiuscola.innerText = "✓";
-      } else {
-        reqMaiuscola.className = "text-red-400 flex items-center gap-1";
-        iconMaiuscola.innerText = "✕";
-      }
-
-      if (vNumero) {
-        reqNumero.className = "text-green-400 flex items-center gap-1";
-        iconNumero.innerText = "✓";
-      } else {
-        reqNumero.className = "text-red-400 flex items-center gap-1";
-        iconNumero.innerText = "✕";
-      }
-
-      if (vSpeciale) {
-        reqSpeciale.className = "text-green-400 flex items-center gap-1";
-        iconSpeciale.innerText = "✓";
-      } else {
-        reqSpeciale.className = "text-red-400 flex items-center gap-1";
-        iconSpeciale.innerText = "✕";
-      }
+      updateReq(reqLunghezza, iconLunghezza, vLunghezza);
+      updateReq(reqMaiuscola, iconMaiuscola, vMaiuscola);
+      updateReq(reqNumero, iconNumero, vNumero);
+      updateReq(reqSpeciale, iconSpeciale, vSpeciale);
     }
 
     function switchAuthTab(tab) {
@@ -712,15 +1179,15 @@
       const btnRegistrati = document.getElementById('tab-registrati');
 
       if (tab === 'accedi') {
-        formAccedi.className = "space-y-4";
-        formRegistrati.className = "space-y-4 hidden";
-        btnAccedi.className = "w-1/2 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-950 transition-colors cursor-pointer";
-        btnRegistrati.className = "w-1/2 py-2 text-sm font-bold rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer";
+        formAccedi.className = "text-left space-y-4";
+        formRegistrati.className = "text-left space-y-4 hidden";
+        btnAccedi.className = "tab-btn active flex-1";
+        btnRegistrati.className = "tab-btn inactive flex-1";
       } else {
-        formAccedi.className = "space-y-4 hidden";
-        formRegistrati.className = "space-y-4";
-        btnAccedi.className = "w-1/2 py-2 text-sm font-bold rounded-lg text-gray-400 hover:text-white transition-colors cursor-pointer";
-        btnRegistrati.className = "w-1/2 py-2 text-sm font-bold rounded-lg bg-yellow-500 text-gray-950 transition-colors cursor-pointer";
+        formAccedi.className = "text-left space-y-4 hidden";
+        formRegistrati.className = "text-left space-y-4";
+        btnAccedi.className = "tab-btn inactive flex-1";
+        btnRegistrati.className = "tab-btn active flex-1";
       }
     }
 
@@ -743,7 +1210,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, sendPasswordResetEmail, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, getDocs, updateDoc, arrayUnion, arrayRemove, onSnapshot, collection, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyDJeMeCgX5MfwWH8Dyok44d7XKacLGFiBc",
@@ -764,9 +1231,11 @@
     let linguaCorrente = localStorage.getItem('preferredLanguage') || 'it';
     let fotoProfiloLocale = null;
     
-    // VARIABILI PER IL REAL-TIME FEED
     let chatUnsubscribers = [];
     let cacheDatiMembri = {};
+    let clanUnsubscriber = null;
+    let datiClanCorrente = null;
+    let idClanAttivoCorrente = "";
 
     const UI_TRANSLATIONS = {
       it: {
@@ -930,7 +1399,6 @@
       setText('profile-gender-label', translations.profileGender);
       setText('profile-photo-label', translations.profilePhoto);
       setText('btn-salva-profilo', translations.saveProfile);
-      setText('profile-logout-btn', translations.logout);
       setText('level-label', translations.levelLabel);
       setText('wishlist-title', translations.wishlistTitle);
       setText('wishlist-close-btn', translations.wishlistClose);
@@ -957,22 +1425,22 @@
       if (target) target.classList.remove('hidden');
     }
 
-    window.apriPopupHubImpostazioni = function() {
+    const apriPopupHubImpostazioni = function() {
       mostraSoloPopup('popup-impostazioni-hub');
     }
 
-    window.chiudiPopupHubImpostazioni = function() {
+    const chiudiPopupHubImpostazioni = function() {
       const popup = document.getElementById('popup-impostazioni-hub');
       if (popup) popup.classList.add('hidden');
     }
 
-    window.apriPopupImpostazioniGenerali = function() {
+    const apriPopupImpostazioniGenerali = function() {
       const select = document.getElementById('general-language-select');
       if (select) select.value = linguaCorrente;
       mostraSoloPopup('popup-impostazioni-generali');
     }
 
-    window.apriPopupAvatarCustomization = function() {
+    const apriPopupAvatarCustomization = function() {
       if (datiUtenteLocale) {
         const nome = document.getElementById('edit-nome');
         const genere = document.getElementById('edit-genere');
@@ -984,18 +1452,18 @@
       mostraSoloPopup('popup-profilo');
     }
 
-    window.apriPopupProfilo = window.apriPopupAvatarCustomization;
+    const apriPopupProfilo = apriPopupAvatarCustomization;
 
-    window.ritornaAlMenuImpostazioni = function() {
+    const ritornaAlMenuImpostazioni = function() {
       mostraSoloPopup('popup-impostazioni-hub');
     }
 
-    window.chiudiPopupProfilo = function() {
+    const chiudiPopupProfilo = function() {
       const popup = document.getElementById('popup-profilo');
       if (popup) popup.classList.add('hidden');
     }
 
-    window.salvaImpostazioniGenerali = function() {
+    const salvaImpostazioniGenerali = function() {
       const select = document.getElementById('general-language-select');
       const linguaSelezionata = select ? select.value : linguaCorrente;
       applyLanguage(linguaSelezionata);
@@ -1021,7 +1489,7 @@
     // ============================================
     // FUNZIONI DI AUTENTICAZIONE
     // ============================================
-    window.gestisciAccedi = async function(event) {
+    const gestisciAccedi = async function(event) {
       event.preventDefault();
       if (isAuthProcessing) return;
       isAuthProcessing = true;
@@ -1047,7 +1515,7 @@
       }
     }
 
-    window.gestisciRegistrazione = async function(event) {
+    const gestisciRegistrazione = async function(event) {
       event.preventDefault();
       if (isAuthProcessing) return;
 
@@ -1081,6 +1549,8 @@
           fotoProfilo: null,
           amici: [],
           messaggi: [],
+          idClan: "",
+          tutorialVisto: false,
           status: "online",
           ultimoAccesso: new Date().toISOString()
         });
@@ -1094,7 +1564,7 @@
       }
     }
 
-    window.gestisciRecupero = async function(event) {
+    const gestisciRecupero = async function(event) {
       event.preventDefault();
       const email = document.getElementById('recupero-email').value.trim();
 
@@ -1124,8 +1594,11 @@
         datiUtenteLocale = docSnap.data();
         datiUtenteLocale.amici = datiUtenteLocale.amici || [];
         datiUtenteLocale.messaggi = datiUtenteLocale.messaggi || [];
+        datiUtenteLocale.idClan = datiUtenteLocale.idClan || "";
+        datiUtenteLocale.tutorialVisto = datiUtenteLocale.tutorialVisto || false;
         fotoProfiloLocale = datiUtenteLocale.fotoProfilo || null;
         window.entraNelGioco(datiUtenteLocale.nome, datiUtenteLocale.genere, datiUtenteLocale.xp, datiUtenteLocale.livello, datiUtenteLocale.monumenti);
+        window.controllaMostraTutorial();
       } else {
         const statoMonumenti = (typeof monumenti !== 'undefined') ? monumenti.map(m => ({ nome: m.nome, scoperto: false })) : [];
         datiUtenteLocale = {
@@ -1137,12 +1610,15 @@
           fotoProfilo: null,
           amici: [],
           messaggi: [],
+          idClan: "",
+          tutorialVisto: false,
           status: "online",
           ultimoAccesso: timestampCorrente
         };
         await setDoc(userRef, datiUtenteLocale);
         fotoProfiloLocale = null;
         window.entraNelGioco("Esploratore", "Esploratore", 0, 1, statoMonumenti);
+        window.controllaMostraTutorial();
       }
       isAuthProcessing = false;
     }
@@ -1150,10 +1626,14 @@
     // ============================================
     // FUNZIONI DI LOGOUT E PROFILO
     // ============================================
-    window.eseguiLogout = async function() {
+    const eseguiLogout = async function() {
       if (!confirm("Vuoi davvero uscire dal gioco?")) return;
       try {
         window.stoppaAscoltoChatRealTime();
+        if (clanUnsubscriber) {
+          clanUnsubscriber();
+          clanUnsubscriber = null;
+        }
         if (utenteCorrenteId) {
           await updateDoc(doc(db, "utenti", utenteCorrenteId), { status: "offline" });
         }
@@ -1164,7 +1644,7 @@
       }
     }
 
-    window.salvaModificheProfilo = async function() {
+    const salvaModificheProfilo = async function() {
       const nuovoNome = document.getElementById('edit-nome').value.trim();
       const nuovoGenere = document.getElementById('edit-genere').value;
       if (!nuovoNome) return;
@@ -1193,7 +1673,7 @@
       }
     }
 
-    window.salvaProgressoSuCloud = async function(xp, livello, listaMonumenti) {
+    const salvaProgressoSuCloud = async function(xp, livello, listaMonumenti) {
       if (!utenteCorrenteId) return;
       try {
         const statoMonumenti = listaMonumenti.map(m => ({ nome: m.nome, scoperto: m.scoperto || false }));
@@ -1210,13 +1690,13 @@
     // ============================================
     // FUNZIONI GESTIONE AMICI
     // ============================================
-    window.copiaCodiceAmico = function() {
+    const copiaCodiceAmico = function() {
       if (!utenteCorrenteId) return;
       navigator.clipboard.writeText(utenteCorrenteId);
       alert("📋 Codice copiato negli appunti! Invialo ai tuoi amici.");
     }
 
-    window.condividiCodiceAmico = function() {
+    const condividiCodiceAmico = function() {
       if (!utenteCorrenteId) return;
       const testoCondivisione = `Unisciti alla mia squadra su Brescia Quest! 🎮 Usa il mio Codice Squadra per scalare la classifica insieme: ${utenteCorrenteId}`;
 
@@ -1231,7 +1711,7 @@
       }
     }
 
-    window.aggiungiAmico = async function() {
+    const aggiungiAmico = async function() {
       const codiceAmico = document.getElementById('input-codice-amico').value.trim();
       if (!codiceAmico) return;
       if (codiceAmico === utenteCorrenteId) {
@@ -1249,7 +1729,7 @@
         await updateDoc(doc(db, "utenti", utenteCorrenteId), { amici: arrayUnion(codiceAmico) });
         await updateDoc(doc(db, "utenti", codiceAmico), { amici: arrayUnion(utenteCorrenteId) });
 
-        alert(`🤝 Compagno aggiunto con successo!`);
+        alert(`🤝 Amico aggiunto con successo!`);
         document.getElementById('input-codice-amico').value = "";
         window.aggiornaElencoClassificaAmici();
       } catch (e) {
@@ -1257,8 +1737,8 @@
       }
     }
 
-    window.rimuoviAmico = async function(idAmico) {
-      if (!confirm("Sei sicuro di voler rimuovere questo amico dalla tua classifica?")) return;
+    const rimuoviAmico = async function(idAmico) {
+      if (!confirm("Sei sicuro di voler rimuovere questo amico?")) return;
       try {
         await updateDoc(doc(db, "utenti", utenteCorrenteId), { amici: arrayRemove(idAmico) });
         await updateDoc(doc(db, "utenti", idAmico), { amici: arrayRemove(utenteCorrenteId) });
@@ -1268,11 +1748,11 @@
       }
     }
 
-    window.aggiornaElencoClassificaAmici = async function() {
+    const aggiornaElencoClassificaAmici = async function() {
       const container = document.getElementById('lista-amici-classifica');
-      const conteggioClan = document.getElementById('conteggio-clan');
+      const conteggioAmici = document.getElementById('conteggio-amici');
       if (!container || !utenteCorrenteId) return;
-      container.innerHTML = "<p class='text-gray-400 animate-pulse text-center py-4'>Sincronizzazione punteggi...</p>";
+      container.innerHTML = "<p class='text-gray-400 animate-pulse text-center py-8'>Sincronizzazione...</p>";
 
       try {
         const mioSnap = await getDoc(doc(db, "utenti", utenteCorrenteId));
@@ -1305,8 +1785,8 @@
           }
         }
 
-        if (conteggioClan) {
-          conteggioClan.innerText = `${partecipanti.length} ${partecipanti.length === 1 ? 'utente' : 'utenti'}`;
+        if (conteggioAmici) {
+          conteggioAmici.innerText = `${partecipanti.length} ${partecipanti.length === 1 ? 'utente' : 'utenti'}`;
         }
 
         partecipanti.sort((a, b) => {
@@ -1326,15 +1806,15 @@
           const badgePiazzamento = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
 
           const riga = document.createElement('div');
-          riga.className = `p-3 rounded-xl flex justify-between items-center border ${isMe ? 'bg-yellow-950/30 border-yellow-500/70' : 'bg-gray-700/40 border-gray-700'}`;
+          riga.className = `card ${isMe ? 'card-gold' : 'card'} p-3 rounded-xl flex justify-between items-center`;
 
           riga.innerHTML = `
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-3">
               <span class="font-mono font-bold text-sm text-gray-400 w-5">${badgePiazzamento}</span>
               <div>
-                <div class="font-bold flex items-center gap-1.5">
+                <div class="font-bold flex items-center gap-1.5 text-sm">
                   ${p.nome}
-                  <span class="w-2 h-2 rounded-full ${p.status === 'online' ? 'bg-green-500' : 'bg-gray-500'}"></span>
+                  <span class="status-dot ${p.status === 'online' ? 'online' : 'offline'}"></span>
                 </div>
                 <div class="text-[10px] text-gray-400">Accesso: ${dataTxt}</div>
               </div>
@@ -1344,7 +1824,7 @@
                 <span class="text-xs font-bold text-green-400 block">Lvl ${p.livello}</span>
                 <span class="text-[10px] text-gray-400">${p.xp} XP</span>
               </div>
-              ${!isMe ? `<button onclick="window.rimuoviAmico('${p.id}')" class="text-red-400 hover:text-red-500 text-sm p-1 cursor-pointer hover:bg-red-950/20 rounded-lg transition-colors">✕</button>` : ''}
+              ${!isMe ? `<button onclick="window.rimuoviAmico('${p.id}')" class="text-red-400 hover:text-red-500 text-sm p-1 cursor-pointer hover:bg-red-500/10 rounded-lg transition-colors">✕</button>` : ''}
             </div>
           `;
           container.appendChild(riga);
@@ -1355,10 +1835,9 @@
     }
 
     // ============================================
-    // FUNZIONI REAL-TIME FEED (CORE) - VERSIONE CON SPUNTE BLU
+    // FUNZIONI REAL-TIME FEED AMICI
     // ============================================
 
-    // Genera e ordina a schermo i messaggi attingendo dalla bacheca aggiornata live
     function renderizzaFeedDinamico() {
       const container = document.getElementById('lista-amici-feed');
       if (!container) return;
@@ -1373,7 +1852,6 @@
         const nomeVisualizzato = idUtente === utenteCorrenteId ? "Tu" : (dUtente.nome || "Esploratore");
         const isMittente = idUtente === utenteCorrenteId;
         
-        // 1. Estrai Monumenti scoperti
         const monumentiUtente = dUtente.monumenti || [];
         monumentiUtente.forEach(m => {
           if (m.scoperto) {
@@ -1387,49 +1865,37 @@
           }
         });
 
-        // 2. Estrai Messaggi di testo della chat con logica spunte
         const messaggiUtente = dUtente.messaggi || [];
         let documentomodificato = false;
 
-        // Mappa i messaggi per verificare le letture in automatico
         const messaggiControllati = messaggiUtente.map(msg => {
-          // Inizializza l'array delle letture se assente (per i vecchi messaggi)
           if (!msg.letteDa) msg.letteDa = [];
 
           if (idUtente !== utenteCorrenteId) {
-            // È un messaggio del mio AMICO: se non l'ho ancora letto, aggiungo il mio ID in automatico
             if (!msg.letteDa.includes(utenteCorrenteId)) {
               msg.letteDa.push(utenteCorrenteId);
-              documentomodificato = true; // Segnala che dobbiamo aggiornare Firestore
+              documentomodificato = true;
             }
           }
           return msg;
         });
 
-        // Se ci sono messaggi dell'amico che ho appena letto automaticamente, aggiorna il suo Firestore
         if (documentomodificato && idUtente !== utenteCorrenteId) {
           updateDoc(doc(db, "utenti", idUtente), { messaggi: messaggiControllati })
-            .catch(err => console.error("Errore durante l'aggiornamento automatico della lettura:", err));
+            .catch(err => console.error("Errore aggiornamento lettura:", err));
         }
 
-        // Genera l'HTML per i messaggi
         messaggiControllati.forEach(msg => {
           let spunteHtml = "";
 
           if (isMittente) {
-            // È UN MIO MESSAGGIO: Devo vedere se l'amico lo ha letto
-            // Controlla se nell'array 'letteDa' c'è almeno un ID che non sia il mio (quello dell'amico)
             const lettoDallAmico = msg.letteDa.some(id => id !== utenteCorrenteId);
-
             if (lettoDallAmico) {
-              // Spunte Blu (Lette)
               spunteHtml = `<span class="text-blue-400 text-xs ml-1 font-bold select-none">✓✓</span>`;
             } else {
-              // Spunte Grigie (Inviato ma non ancora letto dall'altro)
               spunteHtml = `<span class="text-gray-500 text-xs ml-1 select-none">✓✓</span>`;
             }
           }
-          // Se il messaggio è dell'AMICO, NON mostriamo spunte
 
           eventiBacheca.push({
             timestamp: msg.timestamp || new Date().toISOString(),
@@ -1442,17 +1908,15 @@
         });
       });
 
-      // Ordina cronologicamente dal più recente in alto al più vecchio in basso
       eventiBacheca.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 
-      // Limita a 30 eventi per prestazioni
       if (eventiBacheca.length > 30) {
         eventiBacheca = eventiBacheca.slice(0, 30);
       }
 
       container.innerHTML = "";
       if (eventiBacheca.length === 0) {
-        container.innerHTML = "<p class='text-gray-500 text-center py-4'>Ancora nessuna attività o messaggio in questa squadra.</p>";
+        container.innerHTML = "<p class='text-gray-500 text-center py-8'>Ancora nessuna attività o messaggio.</p>";
         return;
       }
 
@@ -1464,22 +1928,20 @@
         if (dataStr !== dataCorrente) {
           dataCorrente = dataStr;
           const separatore = document.createElement('div');
-          separatore.className = "text-[10px] text-gray-500 font-bold uppercase mt-3 mb-1.5 border-b border-gray-700/50 pb-1";
+          separatore.className = "text-[10px] text-gray-500 font-bold uppercase mt-3 mb-1.5 border-b border-white/5 pb-1";
           separatore.innerText = dataStr;
           container.appendChild(separatore);
         }
         
         const riga = document.createElement('div');
-        let bgClass = 'bg-gray-900/90 border border-gray-700/60';
+        let bgClass = 'card';
         if (evento.tipo === 'messaggio' && evento.isMittente) {
-          bgClass = 'bg-gray-800/70 border border-yellow-600/30';
+          bgClass = 'card-gold';
         } else if (evento.tipo === 'messaggio') {
-          bgClass = 'bg-gray-900/90 border border-gray-700/60';
-        } else {
-          bgClass = 'bg-gray-800/50 border border-gray-700/30';
+          bgClass = 'card-blue';
         }
         
-        riga.className = `p-2.5 rounded-xl ${bgClass} text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs animate-fadeIn`;
+        riga.className = `${bgClass} p-3 rounded-xl text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs animate-fadeIn`;
         
         const ora = data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
         riga.innerHTML = `<span class="text-gray-500 mr-1.5">${ora}</span> ${evento.html}`;
@@ -1487,9 +1949,7 @@
       });
     }
 
-    // FUNZIONE CORE: Attiva l'ascolto in tempo reale dei messaggi e dei successi della squadra
-    window.avviaAscoltoChatRealTime = function() {
-      // Pulizia preventiva per evitare canali duplicati
+    const avviaAscoltoChatRealTime = function() {
       window.stoppaAscoltoChatRealTime();
       
       const container = document.getElementById('lista-amici-feed');
@@ -1498,53 +1958,42 @@
         return;
       }
       
-      container.innerHTML = "<p class='text-blue-400 animate-pulse text-center py-4'>Connessione live alla bacheca...</p>";
-      console.log("📡 Avvio ascolto real-time feed per:", utenteCorrenteId);
+      container.innerHTML = "<p class='text-blue-400 animate-pulse text-center py-8'>Connessione live...</p>";
 
-      // 1. Ascolta te stesso (per mostrare subito i tuoi messaggi inviati e aggiornamenti della lista amici)
       const unsubIo = onSnapshot(doc(db, "utenti", utenteCorrenteId), (mioSnap) => {
-        if (!mioSnap.exists()) {
-          console.log("Documento utente non esiste");
-          return;
-        }
+        if (!mioSnap.exists()) return;
         
         const mieiDati = mioSnap.data();
         cacheDatiMembri[utenteCorrenteId] = mieiDati;
         const listaIdAmici = mieiDati.amici || [];
 
-        // Disconnette i vecchi ascoltatori degli amici prima di ri-crearli (in caso la lista amici sia cambiata)
         while (chatUnsubscribers.length > 1) {
           const unsub = chatUnsubscribers.pop();
           if (unsub) unsub();
         }
 
-        // 2. Apri un canale in tempo reale per ogni amico nella squadra
         listaIdAmici.forEach((idAmico) => {
           const unsubAmico = onSnapshot(doc(db, "utenti", idAmico), (snapAmico) => {
             if (snapAmico.exists()) {
               cacheDatiMembri[idAmico] = snapAmico.data();
             }
-            // Ogni volta che un amico scrive o sblocca qualcosa, ridisegna il feed all'istante!
             renderizzaFeedDinamico();
-          }, (err) => console.error("Errore ascolto live amico:", err));
+          }, (err) => console.error("Errore ascolto amico:", err));
           
           chatUnsubscribers.push(unsubAmico);
         });
 
-        // Renderizza subito la bacheca con i dati locali iniziali
         renderizzaFeedDinamico();
       }, (err) => {
-        console.error("Errore ascolto live utente:", err);
-        container.innerHTML = "<p class='text-red-400 text-center py-4'>Impossibile connettersi in tempo reale.</p>";
+        console.error("Errore ascolto utente:", err);
+        container.innerHTML = "<p class='text-red-400 text-center py-8'>Impossibile connettersi.</p>";
       });
 
-      chatUnsubscribers.unshift(unsubIo); // Mette l'ascoltatore dell'utente in cima alla lista
+      chatUnsubscribers.unshift(unsubIo);
     };
 
-    // Disconnette tutti i canali attivi (salva-letture quando chiudi il popup o cambi scheda)
-    window.stoppaAscoltoChatRealTime = function() {
+    const stoppaAscoltoChatRealTime = function() {
       if (chatUnsubscribers && chatUnsubscribers.length > 0) {
-        console.log(`🛑 Fermo ${chatUnsubscribers.length} listener feed`);
         chatUnsubscribers.forEach(unsub => {
           if (typeof unsub === 'function') unsub();
         });
@@ -1553,11 +2002,7 @@
       cacheDatiMembri = {};
     };
 
-    // ============================================
-    // FUNZIONI PER GESTIONE MESSAGGI CHAT - VERSIONE CON SPUNTE BLU
-    // ============================================
-
-    window.inviaMessaggioChat = async function() {
+    const inviaMessaggioChat = async function() {
       const input = document.getElementById('input-messaggio-chat');
       if (!input) return;
       const testo = input.value.trim();
@@ -1584,28 +2029,51 @@
             id: idMessaggio,
             testo: testo,
             timestamp: new Date().toISOString(),
-            letteDa: [] // Array che conterrà gli ID di chi ha letto il messaggio
+            letteDa: []
           })
         });
         
         input.value = "";
-        console.log("✅ Messaggio inviato! Il real-time lo mostrerà a tutti.");
       } catch (e) {
-        console.error("Errore durante l'invio del messaggio: ", e);
+        console.error("Errore invio messaggio: ", e);
         alert("❌ Errore nell'invio del messaggio.");
       }
     };
 
-    // Funzioni mantenute per compatibilità ma ora usano la nuova logica
-    window.marcaMessaggioVisualizzato = async function(idMessaggio) {
-      // Questa funzione ora è automatica, ma la manteniamo per compatibilità
-      console.log("La marcatura dei messaggi è ora automatica! Non serve più premere manualmente.");
+    const cancellaTuttiIMessaggi = async function() {
+      if (!utenteCorrenteId) return;
+
+      const conferma = confirm("⚠️ ATTENZIONE: Sei sicuro di voler cancellare TUTTI i messaggi?");
+      if (!conferma) return;
+
+      try {
+        await updateDoc(doc(db, "utenti", utenteCorrenteId), {
+          messaggi: []
+        });
+
+        const tuttiIdMembri = Object.keys(cacheDatiMembri);
+        for (let idUtente of tuttiIdMembri) {
+          if (idUtente !== utenteCorrenteId) {
+            await updateDoc(doc(db, "utenti", idUtente), {
+              messaggi: []
+            });
+          }
+        }
+
+        alert("🧹 Piazza pulita completata!");
+      } catch (e) {
+        console.error("Errore rimozione messaggi: ", e);
+        alert("❌ Errore durante l'eliminazione.");
+      }
     };
 
-    window.eliminaMessaggioChat = async function(idMessaggio) {
+    const marcaMessaggioVisualizzato = async function(idMessaggio) {
+      console.log("Marcatura automatica!");
+    };
+
+    const eliminaMessaggioChat = async function(idMessaggio) {
       if (!utenteCorrenteId || !idMessaggio) return;
-      
-      if (!confirm("Sei sicuro di voler eliminare questo messaggio?")) return;
+      if (!confirm("Eliminare questo messaggio?")) return;
       
       try {
         const userRef = doc(db, "utenti", utenteCorrenteId);
@@ -1614,48 +2082,573 @@
         if (userSnap.exists()) {
           const userData = userSnap.data();
           const messaggi = userData.messaggi || [];
-          
           const messaggiAggiornati = messaggi.filter(m => m.id !== idMessaggio);
-          
-          await updateDoc(userRef, {
-            messaggi: messaggiAggiornati
-          });
-          
-          alert("✅ Messaggio eliminato con successo!");
+          await updateDoc(userRef, { messaggi: messaggiAggiornati });
+          alert("✅ Messaggio eliminato!");
         }
       } catch (e) {
-        console.error("Errore durante l'eliminazione del messaggio: ", e);
-        alert("❌ Errore durante l'eliminazione del messaggio.");
+        console.error("Errore eliminazione messaggio: ", e);
+        alert("❌ Errore durante l'eliminazione.");
       }
     };
 
-    window.eliminaTuttiMessaggiChat = async function() {
+    const eliminaTuttiMessaggiChat = async function() {
       if (!utenteCorrenteId) return;
-      
-      if (!confirm("Sei sicuro di voler eliminare TUTTI i tuoi messaggi?")) return;
+      if (!confirm("Eliminare TUTTI i tuoi messaggi?")) return;
       
       try {
         await updateDoc(doc(db, "utenti", utenteCorrenteId), {
           messaggi: []
         });
-        
-        alert("✅ Tutti i messaggi eliminati con successo!");
+        alert("✅ Tutti i tuoi messaggi eliminati!");
       } catch (e) {
-        console.error("Errore durante l'eliminazione di tutti i messaggi: ", e);
-        alert("❌ Errore durante l'eliminazione dei messaggi.");
+        console.error("Errore eliminazione messaggi: ", e);
+        alert("❌ Errore durante l'eliminazione.");
       }
     };
 
-    window.marcaIstantaneaTuttiMessaggi = async function() {
-      // Questa funzione ora è automatica, ma la manteniamo per compatibilità
-      alert("La marcatura dei messaggi è ora automatica! Non serve più premere manualmente.");
+    const marcatstantaneaTuttiMessaggi = async function() {
+      alert("La marcatura è automatica!");
     };
 
     // ============================================
-    // SWITCH DEI TAB CON GESTIONE REAL-TIME
+    // SISTEMA TUTORIAL VIDEO
     // ============================================
 
-    window.switchAmiciTab = function(tab) {
+    const controllaMostraTutorial = async function() {
+      if (!utenteCorrenteId) return;
+
+      try {
+        const snapUtente = await getDoc(doc(db, "utenti", utenteCorrenteId));
+        const dati = snapUtente.data();
+
+        if (!dati || !dati.tutorialVisto) {
+          document.getElementById('popup-tutorial').classList.remove('hidden');
+          
+          const video = document.getElementById('video-tutorial');
+          if (video) {
+            video.currentTime = 0;
+            video.play().catch(err => console.log("Autoplay bloccato dal browser, l'utente premerà play manualmente."));
+          }
+        }
+      } catch (e) {
+        console.error("Errore nel controllo del tutorial:", e);
+      }
+    };
+
+    const chiudiESaltaTutorial = async function() {
+      document.getElementById('popup-tutorial').classList.add('hidden');
+
+      const video = document.getElementById('video-tutorial');
+      if (video) {
+        video.pause();
+      }
+
+      if (utenteCorrenteId) {
+        try {
+          await updateDoc(doc(db, "utenti", utenteCorrenteId), {
+            tutorialVisto: true
+          });
+          console.log("Stato tutorial salvato: l'utente non lo vedrà più.");
+        } catch (e) {
+          console.error("Errore durante il salvataggio dello stato del tutorial:", e);
+        }
+      }
+    };
+
+    // ============================================
+    // SISTEMA CLAN
+    // ============================================
+
+    const chiudiPopupClan = function() {
+      document.getElementById('popup-clan').classList.add('hidden');
+      if (clanUnsubscriber) {
+        clanUnsubscriber();
+        clanUnsubscriber = null;
+      }
+    };
+
+    const switchClanTab = function(tab) {
+      const btnClassifica = document.getElementById('btn-clan-tab-classifica');
+      const btnFeed = document.getElementById('btn-clan-tab-feed');
+      const listaClassifica = document.getElementById('lista-clan-classifica');
+      const listaFeed = document.getElementById('lista-clan-feed');
+      const sezioneChat = document.getElementById('sezione-invia-messaggio-clan');
+
+      if (tab === 'classifica') {
+        btnClassifica.className = "tab-btn active text-xs py-1.5 px-3.5";
+        btnFeed.className = "tab-btn inactive text-xs py-1.5 px-3.5";
+        listaClassifica.classList.remove('hidden');
+        listaFeed.classList.add('hidden');
+        sezioneChat.classList.add('hidden');
+      } else {
+        btnClassifica.className = "tab-btn inactive text-xs py-1.5 px-3.5";
+        btnFeed.className = "tab-btn active text-xs py-1.5 px-3.5";
+        listaClassifica.classList.add('hidden');
+        listaFeed.classList.remove('hidden');
+        sezioneChat.classList.remove('hidden');
+      }
+    };
+
+    const inizializzaSchermataClan = async function() {
+      if (!utenteCorrenteId) return;
+
+      try {
+        const snapUtente = await getDoc(doc(db, "utenti", utenteCorrenteId));
+        if (!snapUtente.exists()) return;
+        
+        const datiUtente = snapUtente.data();
+        const idClan = datiUtente.idClan || "";
+        const conteggioClan = document.getElementById('conteggio-clan');
+
+        if (idClan === "") {
+          idClanAttivoCorrente = "";
+          document.getElementById('schermata-no-clan').classList.remove('hidden');
+          document.getElementById('schermata-si-clan').classList.add('hidden');
+          if (conteggioClan) conteggioClan.innerText = "0 utenti";
+          window.caricaListaClanDisponibili();
+        } else {
+          idClanAttivoCorrente = idClan;
+          document.getElementById('schermata-no-clan').classList.add('hidden');
+          document.getElementById('schermata-si-clan').classList.remove('hidden');
+          window.avviaAscoltoClanRealTime(idClan);
+        }
+      } catch (e) {
+        console.error("Errore inizializzazione clan:", e);
+      }
+    };
+
+    const creaNuovoClan = async function() {
+      const input = document.getElementById('input-nome-clan');
+      const nome = input.value.trim();
+      if (!nome || !utenteCorrenteId) {
+        alert("Inserisci un nome per il clan!");
+        return;
+      }
+
+      try {
+        const nuovoClanRef = await addDoc(collection(db, "clan"), {
+          nome: nome,
+          creatore: utenteCorrenteId,
+          membri: [utenteCorrenteId],
+          messaggi: []
+        });
+
+        await updateDoc(doc(db, "utenti", utenteCorrenteId), { idClan: nuovoClanRef.id });
+        input.value = "";
+        alert(`✅ Clan "${nome}" creato con successo!`);
+        window.inizializzaSchermataClan();
+      } catch (e) {
+        console.error("Errore creazione clan:", e);
+        alert("❌ Errore durante la creazione del clan.");
+      }
+    };
+
+    const caricaListaClanDisponibili = async function() {
+      const container = document.getElementById('lista-clan-disponibili');
+      if (!container) return;
+      container.innerHTML = "<p class='text-gray-500 text-center text-xs py-8'>Caricamento squadre...</p>";
+
+      try {
+        const querySnapshot = await getDocs(collection(db, "clan"));
+        container.innerHTML = "";
+
+        if (querySnapshot.empty) {
+          container.innerHTML = "<p class='text-gray-500 text-center text-xs py-8'>Nessun clan attivo. Fondane uno tu!</p>";
+          return;
+        }
+
+        querySnapshot.forEach((docClan) => {
+          const clan = docClan.data();
+          const idDelClan = docClan.id;
+          
+          const listaMembri = clan.membri || [];
+          const numMembri = listaMembri.length;
+          const nomeClan = clan.nome || "Clan senza nome";
+
+          const riga = document.createElement('div');
+          riga.className = "card-purple p-3 rounded-xl mb-1 flex justify-between items-center";
+          
+          const infoDiv = document.createElement('div');
+          infoDiv.className = "flex flex-col";
+          infoDiv.innerHTML = `
+            <p class="text-xs font-bold text-white">${nomeClan}</p>
+            <p class="text-[10px] text-gray-400">Giocatori: ${numMembri}/30</p>
+          `;
+          riga.appendChild(infoDiv);
+
+          const azioneDiv = document.createElement('div');
+          if (numMembri < 30) {
+            const btnEntra = document.createElement('button');
+            btnEntra.className = "btn-purple text-[11px] px-3 py-1.5";
+            btnEntra.innerText = "Entra 🚪";
+            
+            btnEntra.addEventListener('click', () => {
+              window.entraNelClan(idDelClan);
+            });
+            
+            azioneDiv.appendChild(btnEntra);
+          } else {
+            azioneDiv.innerHTML = `<span class="text-red-400 text-[10px] font-bold">🔒 PIENO</span>`;
+          }
+          riga.appendChild(azioneDiv);
+
+          container.appendChild(riga);
+        });
+      } catch (e) {
+        console.error("Errore nel caricamento dei clan:", e);
+        container.innerHTML = "<p class='text-red-400 text-center text-xs py-8'>Errore nel caricamento.</p>";
+      }
+    };
+
+    const entraNelClan = async function(idClan) {
+      if (!utenteCorrenteId) return;
+      
+      try {
+        const clanRef = doc(db, "clan", idClan);
+        
+        await updateDoc(clanRef, {
+          membri: arrayUnion(utenteCorrenteId)
+        });
+        
+        await updateDoc(doc(db, "utenti", utenteCorrenteId), { idClan: idClan });
+
+        alert("✅ Sei entrato nel clan con successo!");
+        window.inizializzaSchermataClan();
+      } catch (e) {
+        console.error("Errore entrata nel clan:", e);
+        alert("❌ Errore durante l'ingresso nel clan.");
+      }
+    };
+
+    const avviaAscoltoClanRealTime = function(idClan) {
+      if (clanUnsubscriber) {
+        clanUnsubscriber();
+        clanUnsubscriber = null;
+      }
+
+      clanUnsubscriber = onSnapshot(doc(db, "clan", idClan), async (clanSnap) => {
+        if (!clanSnap.exists()) {
+          await updateDoc(doc(db, "utenti", utenteCorrenteId), { idClan: "" });
+          alert("Il clan è stato sciolto dal capo.");
+          window.inizializzaSchermataClan();
+          return;
+        }
+
+        datiClanCorrente = clanSnap.data();
+        
+        const nomeDisplay = document.getElementById('clan-nome-display');
+        const membriCount = document.getElementById('clan-membri-count');
+        const conteggioClan = document.getElementById('conteggio-clan');
+        
+        if (nomeDisplay) nomeDisplay.textContent = datiClanCorrente.nome || "Clan";
+        if (membriCount) {
+          const numMembri = datiClanCorrente.membri ? datiClanCorrente.membri.length : 0;
+          membriCount.textContent = `${numMembri}/30 membri`;
+        }
+        if (conteggioClan) {
+          const numMembri = datiClanCorrente.membri ? datiClanCorrente.membri.length : 0;
+          conteggioClan.innerText = `${numMembri} ${numMembri === 1 ? 'utente' : 'utenti'}`;
+        }
+
+        const containerOpzioni = document.getElementById('opzioni-gestione-clan');
+        if (datiClanCorrente.creatore === utenteCorrenteId) {
+          containerOpzioni.innerHTML = `
+            <button onclick="window.disciogliClan()" class="text-red-400 hover:text-red-300 font-bold text-[10px] cursor-pointer bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded-md transition-colors mr-1">💥 SCIOGLI</button>
+            <button onclick="window.esciDalClan()" class="text-orange-400 hover:text-orange-300 font-bold text-[10px] cursor-pointer bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-md transition-colors">🚪 ESCI</button>
+          `;
+        } else {
+          containerOpzioni.innerHTML = `
+            <button onclick="window.esciDalClan()" class="text-orange-400 hover:text-orange-300 font-bold text-[10px] cursor-pointer bg-orange-500/10 border border-orange-500/20 px-2 py-0.5 rounded-md transition-colors">🚪 ESCI</button>
+          `;
+        }
+
+        let dettagliMembri = [];
+        if (datiClanCorrente.membri) {
+          for (let idMembro of datiClanCorrente.membri) {
+            const snapM = await getDoc(doc(db, "utenti", idMembro));
+            if (snapM.exists()) {
+              dettagliMembri.push({ id: idMembro, ...snapM.data() });
+            }
+          }
+        }
+
+        renderizzaClassificaClan(dettagliMembri);
+        renderizzaFeedClan(dettagliMembri);
+        
+        document.getElementById('sezione-invia-messaggio-clan').classList.remove('hidden');
+        
+      }, (error) => {
+        console.error("Errore ascolto clan:", error);
+      });
+    };
+
+    // ============================================
+    // USCITA DAL CLAN CON ELEZIONE NUOVO CAPO
+    // ============================================
+    const esciDalClan = async function() {
+      if (!utenteCorrenteId || !idClanAttivoCorrente) return;
+      
+      if (!confirm("Vuoi davvero uscire da questo Clan?")) return;
+      
+      try {
+        if (clanUnsubscriber) {
+          clanUnsubscriber();
+          clanUnsubscriber = null;
+        }
+
+        const clanRef = doc(db, "clan", idClanAttivoCorrente);
+        const clanSnap = await getDoc(clanRef);
+        
+        if (clanSnap.exists()) {
+          const datiClan = clanSnap.data();
+          let membriAggiornati = datiClan.membri.filter(id => id !== utenteCorrenteId);
+          
+          if (datiClan.creatore === utenteCorrenteId && membriAggiornati.length > 0) {
+            const nuovoCapo = membriAggiornati[0];
+            await updateDoc(clanRef, {
+              creatore: nuovoCapo,
+              membri: membriAggiornati
+            });
+            alert(`👑 Hai passato il comando a un nuovo capo!`);
+          } else {
+            await updateDoc(clanRef, { membri: membriAggiornati });
+          }
+        }
+        
+        await updateDoc(doc(db, "utenti", utenteCorrenteId), { idClan: "" });
+        idClanAttivoCorrente = "";
+        
+        alert("✅ Sei uscito dal clan.");
+        window.inizializzaSchermataClan();
+      } catch (e) {
+        console.error("Errore uscita dal clan:", e);
+        alert("❌ Errore durante l'uscita dal clan.");
+      }
+    };
+
+    const disciogliClan = async function() {
+      if (!utenteCorrenteId || !idClanAttivoCorrente) return;
+      
+      if (!confirm("🚨 ATTENZIONE CAPO SQUADRA: Vuoi sciogliere definitivamente il clan? Tutti i giocatori verranno espulsi e la chat verrà eliminata per sempre.")) return;
+      
+      try {
+        if (clanUnsubscriber) {
+          clanUnsubscriber();
+          clanUnsubscriber = null;
+        }
+
+        const clanRef = doc(db, "clan", idClanAttivoCorrente);
+        const clanSnap = await getDoc(clanRef);
+        
+        if (clanSnap.exists()) {
+          const membri = clanSnap.data().membri || [];
+          for (let idMembro of membri) {
+            await updateDoc(doc(db, "utenti", idMembro), { idClan: "" });
+          }
+        }
+
+        await deleteDoc(clanRef);
+        idClanAttivoCorrente = "";
+        
+        alert("💥 Clan sciolto con successo!");
+        window.inizializzaSchermataClan();
+      } catch (e) {
+        console.error("Errore scioglimento clan:", e);
+        alert("❌ Errore durante lo scioglimento del clan.");
+      }
+    };
+
+    const inviaMessaggioClan = async function() {
+      const input = document.getElementById('input-messaggio-clan');
+      if (!input || !idClanAttivoCorrente || !utenteCorrenteId) return;
+      
+      const testo = input.value.trim();
+      if (!testo) {
+        alert("Scrivi un messaggio!");
+        return;
+      }
+
+      try {
+        const snapUtente = await getDoc(doc(db, "utenti", utenteCorrenteId));
+        const nomeMittente = snapUtente.data().nome || "Esploratore";
+        const idMessaggio = "msg_" + Date.now() + "_" + Math.random().toString(36).substr(2, 5);
+
+        await updateDoc(doc(db, "clan", idClanAttivoCorrente), {
+          messaggi: arrayUnion({
+            id: idMessaggio,
+            mittenteId: utenteCorrenteId,
+            mittenteNome: nomeMittente,
+            testo: testo,
+            timestamp: new Date().toISOString(),
+            letteDa: []
+          })
+        });
+        input.value = "";
+      } catch (e) {
+        console.error("Errore invio messaggio clan:", e);
+        alert("❌ Errore nell'invio del messaggio.");
+      }
+    };
+
+    const cancellaMessaggiClan = async function() {
+      if (!idClanAttivoCorrente) return;
+      
+      if (!confirm("⚠️ Sei sicuro di voler cancellare TUTTI i messaggi del clan?")) return;
+      
+      try {
+        await updateDoc(doc(db, "clan", idClanAttivoCorrente), { messaggi: [] });
+        alert("🧹 Chat del clan svuotata con successo!");
+      } catch (e) {
+        console.error("Errore svuoto chat clan:", e);
+        alert("❌ Errore durante lo svuoto della chat.");
+      }
+    };
+
+    function renderizzaClassificaClan(membri) {
+      const container = document.getElementById('lista-clan-classifica');
+      if (!container) return;
+      
+      if (membri.length === 0) {
+        container.innerHTML = "<p class='text-gray-500 text-center py-8 text-xs'>Nessun membro nel clan.</p>";
+        return;
+      }
+      
+      membri.sort((a, b) => {
+        const aScoperti = a.monumenti?.filter(m => m.scoperto).length || 0;
+        const bScoperti = b.monumenti?.filter(m => m.scoperto).length || 0;
+        return bScoperti - aScoperti;
+      });
+
+      container.innerHTML = "";
+      membri.forEach((membro, index) => {
+        const nScoperti = membro.monumenti?.filter(m => m.scoperto).length || 0;
+        const isMe = membro.id === utenteCorrenteId;
+        const medaglia = index === 0 ? "🥇" : index === 1 ? "🥈" : index === 2 ? "🥉" : `${index + 1}.`;
+        
+        const riga = document.createElement('div');
+        riga.className = `card ${isMe ? 'card-purple' : 'card'} p-2.5 rounded-lg flex justify-between items-center text-xs transition-colors`;
+        
+        const isCapo = membro.id === datiClanCorrente?.creatore;
+        
+        riga.innerHTML = `
+          <div class="flex items-center gap-2">
+            <span class="text-gray-400 font-mono w-6">${medaglia}</span>
+            <span class="${isMe ? 'text-purple-400 font-bold' : 'text-gray-200'}">
+              ${isMe ? "Tu" : membro.nome || "Esploratore"}
+              ${isCapo ? ' 👑' : ''}
+            </span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="text-green-400 font-bold">${nScoperti} 🏛️</span>
+            <span class="text-xs text-gray-400">Lv.${membro.livello || 1}</span>
+          </div>
+        `;
+        container.appendChild(riga);
+      });
+    }
+
+    async function renderizzaFeedClan(membri) {
+      const container = document.getElementById('lista-clan-feed');
+      if (!container || !datiClanCorrente) return;
+
+      let eventiBacheca = [];
+
+      membri.forEach(membro => {
+        const nomeVis = membro.id === utenteCorrenteId ? "Tu" : (membro.nome || "Esploratore");
+        (membro.monumenti || []).forEach(m => {
+          if (m.scoperto) {
+            eventiBacheca.push({
+              timestamp: m.timestamp || new Date().toISOString(),
+              html: `🎉 <strong>${nomeVis}</strong> ha scoperto <span class="text-green-400 font-semibold">${m.nome}</span>!`,
+              tipo: 'scoperta'
+            });
+          }
+        });
+      });
+
+      let messaggiModificati = false;
+      const messaggiControllati = (datiClanCorrente.messaggi || []).map(msg => {
+        if (!msg.letteDa) msg.letteDa = [];
+        if (msg.mittenteId !== utenteCorrenteId && !msg.letteDa.includes(utenteCorrenteId)) {
+          msg.letteDa.push(utenteCorrenteId);
+          messaggiModificati = true;
+        }
+        return msg;
+      });
+
+      if (messaggiModificati && idClanAttivoCorrente) {
+        try {
+          await updateDoc(doc(db, "clan", idClanAttivoCorrente), { messaggi: messaggiControllati });
+        } catch (e) {
+          console.error("Errore aggiornamento letture:", e);
+        }
+      }
+
+      messaggiControllati.forEach(msg => {
+        let spunteHtml = "";
+        if (msg.mittenteId === utenteCorrenteId) {
+          const lettoDaAltri = msg.letteDa.some(id => id !== utenteCorrenteId);
+          spunteHtml = lettoDaAltri 
+            ? `<span class="text-blue-400 font-bold text-[10px] ml-1 select-none">✓✓</span>` 
+            : `<span class="text-gray-500 text-[10px] ml-1 select-none">✓✓</span>`;
+        }
+
+        const nomeMittente = msg.mittenteId === utenteCorrenteId ? "Tu" : (msg.mittenteNome || "Esploratore");
+        eventiBacheca.push({
+          timestamp: msg.timestamp || new Date().toISOString(),
+          html: `💬 <strong class="${msg.mittenteId === utenteCorrenteId ? 'text-purple-400' : 'text-blue-300'}">${nomeMittente}</strong>: <span class="text-gray-100 break-words">${msg.testo}</span>${spunteHtml}`,
+          tipo: 'messaggio',
+          isMittente: msg.mittenteId === utenteCorrenteId
+        });
+      });
+
+      eventiBacheca.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+
+      if (eventiBacheca.length > 50) {
+        eventiBacheca = eventiBacheca.slice(0, 50);
+      }
+
+      container.innerHTML = "";
+      if (eventiBacheca.length === 0) {
+        container.innerHTML = "<p class='text-gray-500 text-center py-8 text-xs'>Nessun messaggio nel Clan.</p>";
+        return;
+      }
+
+      let dataCorrente = '';
+      eventiBacheca.forEach(ev => {
+        const data = new Date(ev.timestamp);
+        const dataStr = data.toLocaleDateString('it-IT', { weekday: 'long', day: 'numeric', month: 'long' });
+        
+        if (dataStr !== dataCorrente) {
+          dataCorrente = dataStr;
+          const separatore = document.createElement('div');
+          separatore.className = "text-[10px] text-gray-500 font-bold uppercase mt-3 mb-1.5 border-b border-white/5 pb-1";
+          separatore.innerText = dataStr;
+          container.appendChild(separatore);
+        }
+        
+        const riga = document.createElement('div');
+        let bgClass = 'card';
+        if (ev.tipo === 'messaggio' && ev.isMittente) {
+          bgClass = 'card-purple';
+        } else if (ev.tipo === 'messaggio') {
+          bgClass = 'card-blue';
+        }
+        
+        riga.className = `${bgClass} p-2.5 rounded-xl text-gray-200 leading-relaxed mb-1.5 shadow-sm text-xs animate-fadeIn`;
+        
+        const ora = data.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+        riga.innerHTML = `<span class="text-gray-500 mr-1.5">${ora}</span> ${ev.html}`;
+        container.appendChild(riga);
+      });
+    }
+
+    // ============================================
+    // SWITCH DEI TAB AMICI
+    // ============================================
+
+    const switchAmiciTab = function(tab) {
       const btnClassifica = document.getElementById('btn-tab-classifica');
       const btnFeed = document.getElementById('btn-tab-feed');
       const listaClassifica = document.getElementById('lista-amici-classifica');
@@ -1665,15 +2658,15 @@
       
       const sezAggiungiAmico = document.getElementById('sezione-aggiungi-amico');
       const sezInviaMessaggio = document.getElementById('sezione-invia-messaggio');
-      const boxSquadra = document.getElementById('box-squadra');
+      const boxCodice = document.getElementById('box-codice');
       const pannelloClassifica = document.getElementById('pannello-classifica');
       const pannelloFeed = document.getElementById('pannello-feed');
 
       if (!btnClassifica || !btnFeed || !listaClassifica || !listaFeed) return;
 
       if (tab === 'classifica') {
-        btnClassifica.className = "bg-blue-600 text-white font-bold text-[11px] px-3 py-2 rounded-lg cursor-pointer transition-all uppercase tracking-wider flex items-center gap-1";
-        btnFeed.className = "bg-gray-700 text-gray-400 font-bold text-[11px] px-3 py-2 rounded-lg cursor-pointer transition-all uppercase tracking-wider flex items-center gap-1 hover:text-white";
+        btnClassifica.className = "tab-btn active text-[11px] px-3 py-2";
+        btnFeed.className = "tab-btn inactive text-[11px] px-3 py-2";
         listaClassifica.classList.remove('hidden');
         listaFeed.classList.add('hidden');
         if (pannelloClassifica) pannelloClassifica.classList.remove('hidden');
@@ -1681,17 +2674,16 @@
         
         if (sezAggiungiAmico) sezAggiungiAmico.classList.remove('hidden');
         if (sezInviaMessaggio) sezInviaMessaggio.classList.add('hidden');
-        if (boxSquadra) boxSquadra.style.display = 'flex';
+        if (boxCodice) boxCodice.style.display = 'flex';
         
-        if (titoloSezione) titoloSezione.innerText = "👥 Il mio Clan";
+        if (titoloSezione) titoloSezione.innerText = "👥 I miei Amici";
         if (sottotitoloSezione) sottotitoloSezione.innerText = "Classifica dei punteggi";
         
-        // STOP real-time quando vai sulla classifica
         window.stoppaAscoltoChatRealTime();
         
       } else {
-        btnClassifica.className = "bg-gray-700 text-gray-400 font-bold text-[11px] px-3 py-2 rounded-lg cursor-pointer transition-all uppercase tracking-wider flex items-center gap-1 hover:text-white";
-        btnFeed.className = "bg-blue-600 text-white font-bold text-[11px] px-3 py-2 rounded-lg cursor-pointer transition-all uppercase tracking-wider flex items-center gap-1";
+        btnClassifica.className = "tab-btn inactive text-[11px] px-3 py-2";
+        btnFeed.className = "tab-btn active text-[11px] px-3 py-2";
         listaClassifica.classList.add('hidden');
         listaFeed.classList.remove('hidden');
         if (pannelloClassifica) pannelloClassifica.classList.add('hidden');
@@ -1699,12 +2691,11 @@
         
         if (sezAggiungiAmico) sezAggiungiAmico.classList.add('hidden');
         if (sezInviaMessaggio) sezInviaMessaggio.classList.remove('hidden');
-        if (boxSquadra) boxSquadra.style.display = 'none';
+        if (boxCodice) boxCodice.style.display = 'none';
         
-        if (titoloSezione) titoloSezione.innerText = "⚡ Bacheca & Successi della Squadra";
-        if (sottotitoloSezione) sottotitoloSezione.innerText = "Messaggi e conquiste dei compagni";
+        if (titoloSezione) titoloSezione.innerText = "⚡ Chat & Attività";
+        if (sottotitoloSezione) sottotitoloSezione.innerText = "Messaggi e conquiste";
         
-        // ATTIVA il real-time quando vai sul feed
         window.avviaAscoltoChatRealTime();
       }
     };
@@ -1730,7 +2721,7 @@
     // ============================================
     // FUNZIONE DI ENTRATA NEL GIOCO
     // ============================================
-    window.entraNelGioco = function(nome, genere, xp, livello, datiMonumenti) {
+    const entraNelGioco = function(nome, genere, xp, livello, datiMonumenti) {
       document.getElementById('schermata-login').classList.add('hidden');
       document.getElementById('schermata-recupero').classList.add('hidden');
 
@@ -1763,20 +2754,53 @@
     }
 
     // ============================================
-    // CHIUSURA POPUP AMICI CON STOP REAL-TIME
+    // ESPORTA TUTTE LE FUNZIONI A WINDOW
     // ============================================
-    const originalChiudiPopupAmici = window.chiudiPopupAmici;
-    window.chiudiPopupAmici = function() {
-      if (document.getElementById('popup-amici')) {
-        document.getElementById('popup-amici').classList.add('hidden');
-      }
-      window.stoppaAscoltoChatRealTime();
-      if (typeof originalChiudiPopupAmici === 'function') {
-        originalChiudiPopupAmici();
-      }
-    };
+    window.gestisciRegistrazione = gestisciRegistrazione;
+    window.gestisciAccedi = gestisciAccedi;
+    window.gestisciRecupero = gestisciRecupero;
+    window.eseguiLogout = eseguiLogout;
+    window.salvaModificheProfilo = salvaModificheProfilo;
+    window.salvaImpostazioniGenerali = salvaImpostazioniGenerali;
+    window.aggiungiAmico = aggiungiAmico;
+    window.rimuoviAmico = rimuoviAmico;
+    window.avviaAscoltoChatRealTime = avviaAscoltoChatRealTime;
+    window.stoppaAscoltoChatRealTime = stoppaAscoltoChatRealTime;
+    window.inviaMessaggioChat = inviaMessaggioChat;
+    window.cancellaTuttiIMessaggi = cancellaTuttiIMessaggi;
+    window.eliminaTuttiMessaggiChat = eliminaTuttiMessaggiChat;
+    window.marcaIstantaneaTuttiMessaggi = marcatstantaneaTuttiMessaggi;
+    window.creaNuovoClan = creaNuovoClan;
+    window.entraNelClan = entraNelClan;
+    window.esciDalClan = esciDalClan;
+    window.disciogliClan = disciogliClan;
+    window.inviaMessaggioClan = inviaMessaggioClan;
+    window.cancellaMessaggiClan = cancellaMessaggiClan;
+    window.switchAmiciTab = switchAmiciTab;
+    window.switchClanTab = switchClanTab;
+    window.inizializzaSchermataClan = inizializzaSchermataClan;
+    window.copiaCodiceAmico = copiaCodiceAmico;
+    window.condividiCodiceAmico = condividiCodiceAmico;
+    window.controllaMostraTutorial = controllaMostraTutorial;
+    window.chiudiESaltaTutorial = chiudiESaltaTutorial;
+    window.apriPopupHubImpostazioni = apriPopupHubImpostazioni;
+    window.chiudiPopupHubImpostazioni = chiudiPopupHubImpostazioni;
+    window.apriPopupImpostazioniGenerali = apriPopupImpostazioniGenerali;
+    window.apriPopupAvatarCustomization = apriPopupAvatarCustomization;
+    window.apriPopupProfilo = apriPopupProfilo;
+    window.ritornaAlMenuImpostazioni = ritornaAlMenuImpostazioni;
+    window.chiudiPopupProfilo = chiudiPopupProfilo;
+    window.chiudiPopupClan = chiudiPopupClan;
+    window.aggiornaElencoClassificaAmici = aggiornaElencoClassificaAmici;
+    window.caricaListaClanDisponibili = caricaListaClanDisponibili;
+    window.avviaAscoltoClanRealTime = avviaAscoltoClanRealTime;
+    window.salvaProgressoSuCloud = salvaProgressoSuCloud;
+    window.entraNelGioco = entraNelGioco;
 
-    console.log("✅ Brescia Quest real-time feed attivo con spunte blu stile WhatsApp!");
+    console.log("✅ Brescia Quest - Sistema Amici + Clan + Tutorial attivo!");
+    console.log("👥 Amici: chat privata e classifica");
+    console.log("🛡️ Clan: fino a 30 membri, chat centralizzata, elezione automatica del capo!");
+    console.log("📖 Tutorial: si mostra solo al primo accesso!");
   </script>
 </body>
 </html>
