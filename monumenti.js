@@ -153,5 +153,25 @@ const monumenti = [
         "desc": "Il Museo delle Armi Luigi Marzoli ospita una delle più pregiate raccolte europee di armature e armi antiche, che raccontano la lunghissima e prolifica tradizione armiera bresciana.",
         "categoria": "monumento",
         "scoperto": false
+    },
+    {
+        // iveco 45.550877349712295, 10.20417190465072
+        "id": 17,
+        "nome" "Iveco",
+        "lat": 45.5508,
+        "lng": 10.2041,
+        "desc": "Sede Iveco.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // spedali civili di brescia 45.55644685314258, 10.231851948390482
+        "id": 18,
+        "nome": "Spedali civili di Brescia",
+        "lat": 45.5564,
+        "lng": 10.2318,
+        "desc": "spedaliii",
+        "categoria": "monumeto",
+        "scoperto": false
     }
 ];
