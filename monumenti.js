@@ -157,7 +157,7 @@ const monumenti = [
     {
         // iveco 45.550877349712295, 10.20417190465072
         "id": 17,
-        "nome" "Iveco",
+        "nome": "Iveco",
         "lat": 45.5508,
         "lng": 10.2041,
         "desc": "Sede Iveco.",
