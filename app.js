@@ -101,12 +101,7 @@ function initGioco() {
     }, 200);
 }
 
-// --- GESTIONE DEI FILTRI E DEI PIN ---
-function aggiornaMappaELista(categoria) {
-    if (categoria !== undefined) {
-        categoriaCorrente = categoria;
-    }
-    
+function aggiornaMappaELista() {
     if (!map || typeof monumenti === 'undefined') return;
 
     // Svuota i marker precedenti
@@ -140,6 +135,19 @@ function aggiornaMappaELista(categoria) {
             m.markerRef = marker; // Salviamo il riferimento per aprirlo dinamicamente allo sblocco
         }
     });
+
+    // FIX DEFINITIVO: Raggruppa i marker e aspetta che il CSS della mappa sia caricato
+    if (markersAttivi.length > 0) {
+        const markerGroup = L.featureGroup(markersAttivi);
+        
+        // Aspettiamo 250ms per far calcolare al browser l'altezza del div #map
+        setTimeout(() => {
+            map.fitBounds(markerGroup.getBounds(), { 
+                padding: [40, 40], // Margine per non attaccare i pin ai bordi
+                maxZoom: 16 // Previene zoom eccessivi se filtri una categoria con 1 solo pin
+            });
+        }, 250);
+    }
 }
 
 function aggiornaWishlist() {
