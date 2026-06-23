@@ -121,7 +121,7 @@ const monumenti = [
         "lat": 45.5560,
         "lng": 10.2162,
         "desc": "SCUOLA DI MERDA",
-        "categoria": "TEST",
+        "categoria": "monumento",
         "scoperto": false
     }
 ];
