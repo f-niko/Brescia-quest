@@ -80,7 +80,7 @@ const monumenti = [
         "nome": "Museo Diocesano di Brescia",
         "lat": 45.5411,
         "lng": 10.2205,
-        "desc" "Punto di riferimento e coordinamento per la promozione, la valorizzazione e la gestione del patrimonio artistico e culturale "sacro" del centro storico di Brescia",
+        "desc": "Punto di riferimento e coordinamento per la promozione, la valorizzazione e la gestione del patrimonio artistico e culturale "sacro" del centro storico di Brescia",
         "categoria": "monumento",
         "scoperto": false
     }
