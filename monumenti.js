@@ -113,5 +113,15 @@ const monumenti = [
         "desc": "Il Duomo Nuovo di Brescia, progettato dall’architetto Giovanbattista Lantana, sorge al centro di Piazza Paolo VI, sopra i resti dell’antica basilica paleocristiana di San Pietro de Dom.",
         "categoria": "monumento",
         "scoperto": false
+    },
+    {
+        // ITIS CASTELLI 45.5560004354716, 10.216235249349113
+        "id": 13,
+        "nome": "ITIS Benedetto Castelli",
+        "lat": 45.5560,
+        "lng": 10.2162,
+        "desc": "SCUOLA DI MERDA",
+        "categoria": "TEST",
+        "scoperto": false
     }
 ];
