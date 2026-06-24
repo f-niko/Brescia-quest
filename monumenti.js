@@ -173,5 +173,25 @@ const monumenti = [
         "desc": "spedaliii",
         "categoria": "monumeto",
         "scoperto": false
+    },
+    {
+        // outlet franciacorta 45.576883489528264, 10.119136738495644
+        "id": 19,
+        "nome": "Franciacorta designer village",
+        "lat": 45.5768,
+        "lng": 10.1191,
+        "desc": "Oltre 190 brand esclusivi, con prezzi ridotti dal 30% fino al 70%, tutto l'anno.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // santuario della madonna del patrocinio 45.53800956136786, 10.252017525561836
+        "id": 20,
+        "nome": "Santuario della Madonna del Patrocinio",
+        "lat": 45.5380,
+        "lng": 10.2520,
+        "desc": "Il Santuario della Madonna del Patrocinio è un piccolo santuario cattolico sorto nel 1720 come piccolo oratorio privato, nell'alta Val Tavareda.",
+        "categoria": "monumento",
+        "scoperto": false
     }
 ];
