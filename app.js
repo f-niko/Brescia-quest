@@ -117,8 +117,8 @@ function aggiornaMappaELista() {
         if (categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente) {
             
             // Creiamo un CircleMarker stilizzato per uniformità visiva del gioco
-            const marker = L.circleMarker([m.lat, m.lng], {
-              radius: 10, // 10 pixels on screen
+            const marker = L.circle([m.lat, m.lng], {
+              radius: 50, // 50 real-world meters
               fillColor: m.scoperto ? '#10b981' : '#ef4444',
               color: '#fff',
               fillOpacity: 0.9,
