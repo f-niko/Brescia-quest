@@ -118,11 +118,11 @@ function aggiornaMappaELista() {
             
             // Creiamo un CircleMarker stilizzato per uniformità visiva del gioco
             const marker = L.circleMarker([m.lat, m.lng], {
-                radius: 10,
-                fillColor: m.scoperto ? '#10b981' : '#ef4444',
-                color: '#fff',
-                fillOpacity: 0.9,
-                weight: 2
+              radius: 10, // 10 pixels on screen
+              fillColor: m.scoperto ? '#10b981' : '#ef4444',
+              color: '#fff',
+              fillOpacity: 0.9,
+              weight: 2
             }).addTo(map);
             
             if (m.scoperto) {
