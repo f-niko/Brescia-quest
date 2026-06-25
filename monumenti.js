@@ -363,5 +363,86 @@ const monumenti = [
         "desc": "Il Forte Garibaldi è una struttura militare storica situata a Brescia, che rappresenta un importante esempio di architettura difensiva e offre una vista panoramica sulla città.",
         "categoria": "monumento",
         "scoperto": false
+    },
+    {
+        // Auditorium Giorgio Gaber 45.5045556277794, 10.145623869473054
+        "id": 38,
+        "nome": "Auditorium Giorgio Gaber",
+        "lat": 45.5045,
+        "lng": 10.1456,
+        "desc": "L'Auditorium Giorgio Gaber è una struttura culturale situata a Brescia, che ospita eventi musicali, teatrali e conferenze, offrendo uno spazio per la promozione delle arti e della cultura.",
+        "categoria": "monumento",
+        "scoperto": false
+    
+    },
+    {
+        // Parco san giovanni paolo II 45.50149369209063, 10.142676899143959
+        "id": 39,
+        "nome": "Parco San Giovanni Paolo II",
+        "lat": 45.5014,
+        "lng": 10.1426,
+        "desc": "Il Parco San Giovanni Paolo II è un'area verde pubblica situata a Brescia, che offre spazi per passeggiate, attività ricreative e momenti di relax immersi nella natura.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // Cimitero vantiniano di torbole casaglia 45.51023260606191, 10.106572923259646
+        "id": 40,
+        "nome": "Cimitero Vantiniano di Torbole Casaglia",
+        "lat": 45.5102,
+        "lng": 10.1065,
+        "desc": "Il Cimitero Vantiniano di Torbole Casaglia è un luogo di sepoltura e memoria, che ospita tombe e monumenti commemorativi della comunità locale.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // ASD Dead City 45.50918315767279, 10.130344791791769
+        "id": 41,
+        "nome": "ASD Dead City",
+        "lat": 45.5091,
+        "lng": 10.1303,
+        "desc": "ASD Dead City è un'associazione sportiva dilettantistica che organizza eventi e attività legate al mondo del paintball e del softair, offrendo un'esperienza di gioco immersiva e avvincente.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // Parco del Fontanone 45.48976126793887, 10.134005647941184
+        "id": 42,
+        "nome": "Parco del Fontanone",
+        "lat": 45.4897,
+        "lng": 10.1340,
+        "desc": "Il Parco del Fontanone è un'area verde pubblica situata a Brescia, che offre spazi per passeggiate, attività ricreative e momenti di relax immersi nella natura.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // Gurdwara Singh Sabha Flero 45.49052196751272, 10.158439135228928
+        "id": 43,
+        "nome": "Gurdwara Singh Sabha Flero",
+        "lat": 45.4905,
+        "lng": 10.1584,
+        "desc": "Il Gurdwara Singh Sabha Flero è un luogo di culto Sikh situato a Brescia, che offre uno spazio per la preghiera, la meditazione e la comunità Sikh locale.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // Villa Labirinto 45.51294892571171, 10.181769526447457
+        "id": 44,
+        "nome": "Villa Labirinto",
+        "lat": 45.5129,
+        "lng": 10.1817,
+        "desc": "Villa Labirinto è una villa storica situata a Brescia, che offre un esempio significativo di architettura residenziale e giardini ornamentali.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // Parco via Aldo Moro 45.48662549280133, 10.172148968773529
+        "id": 45,
+        "nome": "Parco via Aldo Moro",
+        "lat": 45.4866,
+        "lng": 10.1721,
+        "desc": "Il Parco via Aldo Moro è un'area verde pubblica situata a Brescia, che offre spazi per passeggiate, attività ricreative e momenti di relax immersi nella natura.",
+        "categoria": "parco",
+        "scoperto": false
     }
 ];
