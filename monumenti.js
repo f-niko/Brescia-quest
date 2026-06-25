@@ -205,6 +205,93 @@ const monumenti = [
         "scoperto": false
     },
     {
-        
+        // Parco Baden Powell 45.52554961245499, 10.265180008208628
+        "id": 22,
+        "nome": "Parco Baden Powell",
+        "lat": 45.5255,
+        "lng": 10.2651,
+        "desc": "Il Parco Baden Powell è un parco pubblico situato a Brescia, dedicato al fondatore del movimento scout, Robert Baden-Powell. Offre ampi spazi verdi e aree ricreative per famiglie e bambini.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // Unieco Park 45.525051161183704, 10.24809517560076
+        "id": 23,
+        "nome": "Unieco Park",
+        "lat": 45.5250,
+        "lng": 10.2480,
+        "desc": "Unieco Park è un parco urbano situato a Brescia, che offre spazi verdi, aree giochi e percorsi pedonali per il relax e il tempo libero dei cittadini.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // Stadio Mario Rigamonti 45.57062413713271, 10.237002241882873
+        "id": 24,
+        "nome": "Stadio Mario Rigamonti",
+        "lat": 45.5706,
+        "lng": 10.2370,
+        "desc": "Lo Stadio Mario Rigamonti è uno stadio di calcio situato a Brescia, sede delle partite casalinghe della squadra di calcio locale. È un luogo di grande importanza per gli appassionati di sport e tifosi.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // Esselunga di via Trumplina 45.566365389062184, 10.22812711051505
+        "id": 25,
+        "nome": "Esselunga di via Trumplina",
+        "lat": 45.5663,
+        "lng": 10.2281,
+        "desc": "Uno dei principali punti di rifornimento per il quartiere di Via Trumplina. Ottimo per fare scorta di pozioni e provviste prima di partire per l'esplorazione!",
+        "categoria": "supermercato",
+        "scoperto": false
+    },
+    {
+        // Conad di via S. Bartolomeo 45.55826191017568, 10.212593644029276
+        "id": 26,
+        "nome": "Conad di via S. Bartolomeo",
+        "lat": 45.5582,
+        "lng": 10.2125,
+        "desc": "Uno dei principali punti di rifornimento per il quartiere di Via S. Bartolomeo. Ottimo per fare scorta di pozioni e provviste prima di partire per l'esplorazione!",
+        "categoria": "supermercato",
+        "scoperto": false
+    },
+    {
+        // parco Benedetto Castelli 45.57238484761131, 10.237884264435927
+        "id": 27,
+        "nome": "Parco Benedetto Castelli",
+        "lat": 45.5723,
+        "lng": 10.2378,
+        "desc": "Il Parco Benedetto Castelli è un'area verde all'interno della città di Brescia, ideale per passeggiate e momenti di relax in mezzo alla natura.",
+        "categoria": "parco",
+        "scoperto": false
+    },
+    {
+        // MUSIL museo del ferro 45.57649321873042, 10.221751048213829
+        "id": 28,
+        "nome": "MUSIL - Museo del Ferro e della Ghisa",
+        "lat": 45.5764,
+        "lng": 10.2217,
+        "desc": "Il MUSIL è un museo dedicato alla storia della lavorazione del ferro e della ghisa, con esposizioni di macchinari, strumenti e manufatti che raccontano l'evoluzione industriale della città.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // Vecchio Fortino 45.57304317293489, 10.194831194833865
+        "id": 29,
+        "nome": "Vecchio Fortino",
+        "lat": 45.5730,
+        "lng": 10.1948,
+        "desc": "Il Vecchio Fortino è una struttura militare storica situata a Brescia, che offre una vista panoramica sulla città e rappresenta un importante esempio di architettura difensiva.",
+        "categoria": "monumento",
+        "scoperto": false
+    },
+    {
+        // centro sportivo Sanpolino 45.51411211603848, 10.2675621358728
+        "id": 30,
+        "nome": "Centro Sportivo Sanpolino",
+        "lat": 45.5141,
+        "lng": 10.2675,
+        "desc": "Il Centro Sportivo Sanpolino è una struttura dedicata alla pratica di diverse discipline sportive, aree per attività ricreative.",
+        "categoria": "parco",
+        "scoperto": false
     }
 ];
