@@ -128,10 +128,11 @@ function aggiornaMappaELista() {
                 weight: 2
             }).addTo(map);
             
+            const lang = window.linguaCorrente || 'it';
             if (m.scoperto) {
-                marker.bindPopup(`<b>${m.nome}</b><br>${m.desc}`);
+                marker.bindPopup(`<b>${m.nome}</b><br>${(lang === 'en' && m.desc_en) ? m.desc_en : m.desc}`);
             } else {
-                marker.bindPopup(`<b>Luogo Bloccato</b><br>Avvicinati a meno di 50 metri con il GPS per conquistare questo obiettivo!`);
+                marker.bindPopup(`<b>${window.__t('lockedTitle')}</b><br>${window.__t('lockedBody')}`);
             }
             
             markersAttivi.push(marker);
@@ -160,24 +161,26 @@ function aggiornaWishlist() {
     if (!containerLista) return;
     
     if (typeof monumenti === 'undefined') {
-        containerLista.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>Caricamento luoghi in corso...</p>";
+        containerLista.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>" + window.__t('wishlistCaricamento') + "</p>";
         return;
     }
 
     const monumentiFiltrati = monumenti.filter(m => categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente);
     
     if (monumentiFiltrati.length === 0) {
-        containerLista.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>Nessun luogo trovato in questa categoria.</p>";
+        containerLista.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>" + window.__t('wishlistNessunLuogo') + "</p>";
         return;
     }
 
     const daScoprireGlobali = monumenti.filter(m => !m.scoperto);
     if (daScoprireGlobali.length === 0 && categoriaCorrente === 'tutti') {
-        containerLista.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
+        containerLista.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>" + window.__t('wishlistTuttiScoperti') + "</p>";
         return;
     }
 
-    containerLista.innerHTML = ""; 
+    containerLista.innerHTML = "";
+    const lang = window.linguaCorrente || 'it';
+
     monumentiFiltrati.forEach(m => {
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
         const item = document.createElement('div');
@@ -189,11 +192,11 @@ function aggiornaWishlist() {
         item.innerHTML = `
             <div class="flex-1 pr-2">
                 <p class="font-semibold text-sm ${m.scoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
-                <p class="text-[10px] text-gray-400 mt-0.5">${m.desc}</p>
-                <p class="text-xs text-gray-400 font-mono label-distanza mt-1">${m.scoperto ? '🏁 Obiettivo Conquistato' : '📍 Distanza: Calcolo in corso...'}</p>
+                <p class="text-[10px] text-gray-400 mt-0.5">${(lang === 'en' && m.desc_en) ? m.desc_en : m.desc}</p>
+                <p class="text-xs text-gray-400 font-mono label-distanza mt-1">${m.scoperto ? window.__t('wishlistConquistato') : window.__t('wishlistCalcolo')}</p>
             </div>
             <div class="text-sm font-mono text-gray-400 bg-gray-800 px-2 py-1 rounded-md badge-xp shrink-0">
-                ${m.scoperto ? '✅' : '+100 XP'}
+                ${m.scoperto ? '✅' : window.__t('wishlistXpGain')}
             </div>
         `;
         containerLista.appendChild(item);
@@ -208,7 +211,7 @@ function aggiornaWishlistFull() {
     if (!container) return;
     
     if (typeof monumenti === 'undefined') {
-        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>Caricamento luoghi in corso...</p>";
+        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4 animate-pulse'>" + window.__t('wishlistCaricamento') + "</p>";
         return;
     }
 
@@ -222,17 +225,19 @@ function aggiornaWishlistFull() {
     }
     
     if (monumentiFiltrati.length === 0) {
-        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>Nessun luogo trovato in questa categoria.</p>";
+        container.innerHTML = "<p class='text-gray-400 text-xs text-center py-4'>" + window.__t('wishlistNessunLuogo') + "</p>";
         return;
     }
 
     const daScoprireGlobali = monumenti.filter(m => !m.scoperto);
     if (daScoprireGlobali.length === 0) {
-        container.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
+        container.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>" + window.__t('wishlistTuttiScoperti') + "</p>";
         return;
     }
 
     container.innerHTML = "";
+    const lang = window.linguaCorrente || 'it';
+
     monumentiFiltrati.forEach(m => {
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
         const item = document.createElement('div');
@@ -244,11 +249,11 @@ function aggiornaWishlistFull() {
         item.innerHTML = `
             <div class="flex-1 pr-2">
                 <p class="font-semibold text-sm ${m.scoperto ? 'text-green-400' : 'text-gray-200'}">${m.nome}</p>
-                <p class="text-[10px] text-gray-400 mt-0.5">${m.desc}</p>
-                <p class="text-xs text-gray-400 font-mono label-distanza-full mt-1">${m.scoperto ? '🏁 Obiettivo Conquistato' : '📍 Distanza: Calcolo in corso...'}</p>
+                <p class="text-[10px] text-gray-400 mt-0.5">${(lang === 'en' && m.desc_en) ? m.desc_en : m.desc}</p>
+                <p class="text-xs text-gray-400 font-mono label-distanza-full mt-1">${m.scoperto ? window.__t('wishlistConquistato') : window.__t('wishlistCalcolo')}</p>
             </div>
             <div class="text-sm font-mono text-gray-400 bg-gray-800 px-2 py-1 rounded-md badge-xp shrink-0">
-                ${m.scoperto ? '✅' : '+100 XP'}
+                ${m.scoperto ? '✅' : window.__t('wishlistXpGain')}
             </div>
         `;
         container.appendChild(item);
@@ -311,7 +316,7 @@ function attivaGPS(options) {
             options || { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
         );
     } else {
-        alert("Questo telefono o browser non supporta la geolocalizzazione.");
+        alert(window.__t('alertNoGps'));
     }
 }
 window.attivaGPS = attivaGPS;
@@ -362,6 +367,8 @@ function calcolaDistanza(lat1, lon1, lat2, lon2) {
 function controllaProssimita(uLat, uLng) {
     if (typeof monumenti === 'undefined') return;
 
+    const lang = window.linguaCorrente || 'it';
+
     monumenti.forEach(m => {
         const distanza = calcolaDistanza(uLat, uLng, m.lat, m.lng);
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
@@ -371,11 +378,11 @@ function controllaProssimita(uLat, uLng) {
         if (!m.scoperto) {
             if (rigaElemento) {
                 const labelDistanza = rigaElemento.querySelector('.label-distanza');
-                if (labelDistanza) labelDistanza.innerText = `📍 Distanza: ${Math.round(distanza)} metri`;
+                if (labelDistanza) labelDistanza.innerText = `${window.__t('wishlistDistPrefix')} ${Math.round(distanza)} ${window.__t('wishlistDistUnit')}`;
             }
             if (rigaElementoFull) {
                 const labelDistanzaFull = rigaElementoFull.querySelector('.label-distanza-full');
-                if (labelDistanzaFull) labelDistanzaFull.innerText = `📍 Distanza: ${Math.round(distanza)} metri`;
+                if (labelDistanzaFull) labelDistanzaFull.innerText = `${window.__t('wishlistDistPrefix')} ${Math.round(distanza)} ${window.__t('wishlistDistUnit')}`;
             }
 
             if (distanza <= 50) {
@@ -387,7 +394,7 @@ function controllaProssimita(uLat, uLng) {
                 
                 if (m.markerRef) {
                     m.markerRef.setStyle({ fillColor: '#10b981' });
-                    m.markerRef.bindPopup(`<b>${m.nome}</b><br>${m.desc}`).openPopup();
+                    m.markerRef.bindPopup(`<b>${m.nome}</b><br>${(lang === 'en' && m.desc_en) ? m.desc_en : m.desc}`).openPopup();
                 }
 
                 assegnaXP(100);
@@ -440,8 +447,10 @@ function mostraPopupScoperta(m) {
     const descEl = document.getElementById('popup-desc');
     const popupEl = document.getElementById('popup-scoperta');
 
+    const lang = window.linguaCorrente || 'it';
+
     if (nomeEl) nomeEl.innerText = m.nome;
-    if (descEl) descEl.innerText = m.desc;
+    if (descEl) descEl.innerText = (lang === 'en' && m.desc_en) ? m.desc_en : m.desc;
     if (popupEl) popupEl.classList.remove('hidden');
 }
 
@@ -610,7 +619,7 @@ window.controllaESbloccaBadge = function(ultimoMonumentoScoperto, tuttiIMonument
     nuoviBadgeSbloccatiAdesso.forEach(badge => {
         if (typeof window.playJingleMonumento === 'function') window.playJingleMonumento();
         setTimeout(() => {
-            alert(`🏅 TRAGUARDO SBLOCCATO!\nHai ottenuto il badge: ${badge.icona} ${badge.nome}\n"${badge.desc}"`);
+            alert(window.__t('badgeUnlocked').replace('{badge}', `${badge.icona} ${badge.nome}`).replace('{desc}', badge.desc));
         }, 500);
     });
 };
