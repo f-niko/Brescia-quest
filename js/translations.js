@@ -502,8 +502,6 @@ function applyLanguage(lang) {
   setText('amici-nessun-amico', translations.amiciNessunAmico);
   setText('amici-chat-titolo', translations.amiciChatTitolo);
   setText('amici-nessun-msg', translations.amiciNessunMsg);
-  setText('mio-codice-txt', translations.amiciCaricamento);
-
   setText('wishlist-full-title', translations.wishlistFullTitle);
   setText('wishlist-filter-all', translations.wishlistFilterAll);
   setText('wishlist-filter-monumenti', translations.wishlistFilterMonumenti);

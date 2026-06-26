@@ -244,6 +244,8 @@ window.chiudiESaltaTutorial = chiudiESaltaTutorial;
 // AUTH STATE LISTENER
 // ============================================
 window.addEventListener('DOMContentLoaded', () => {
+  applyLanguage(linguaCorrente);
+
   let avvioGestito = false;
   auth.onAuthStateChanged(async (user) => {
     if (user) {
