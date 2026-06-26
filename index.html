@@ -1307,38 +1307,6 @@ document.addEventListener('touchstart', gestisciPrimoClick);
 
     window.chiudiPopupScoperta = function() {
       document.getElementById('popup-scoperta').classList.add('hidden');
-
-      const nomeLuogo = document.getElementById('popup-nome')?.textContent || 'un luogo';
-      if (utenteCorrenteId && nomeLuogo !== 'Nome Posto') {
-        const idMsg = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const msgObj = {
-          id: idMsg,
-          testo: `🎉 Ho scoperto ${nomeLuogo}!`,
-          timestamp: new Date().toISOString(),
-          letteDa: []
-        };
-        updateDoc(doc(db, "utenti", utenteCorrenteId), {
-          messaggi: arrayUnion(msgObj)
-        }).catch(console.error);
-
-        if (idClanAttivoCorrente) {
-          const snapUtente = getDoc(doc(db, "utenti", utenteCorrenteId));
-          snapUtente.then(snap => {
-            const nomeMitt = snap.data().nome || "Esploratore";
-            updateDoc(doc(db, "clan", idClanAttivoCorrente), {
-              messaggi: arrayUnion({
-                id: idMsg + '_clan',
-                mittenteId: utenteCorrenteId,
-                mittenteNome: nomeMitt,
-                testo: `🎉 Ho scoperto ${nomeLuogo}!`,
-                timestamp: new Date().toISOString(),
-                letteDa: []
-              })
-            }).catch(console.error);
-          });
-        }
-      }
-
       if (typeof window.chiudiPopup === 'function') {
         window.chiudiPopup();
       }
