@@ -120,7 +120,7 @@ const monumenti = [
         "nome": "ITIS Benedetto Castelli",
         "lat": 45.5560,
         "lng": 10.2162,
-        "desc": "SCUOLA DI MERDA",
+        "desc": "Illustre istituto scolastico.",
         "categoria": "monumento",
         "scoperto": false
     },
