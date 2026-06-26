@@ -1,6 +1,6 @@
 let audioPlayer = null;
 let audioPlaying = false;
-const FILE_AUDIO = 'guantanamo.mp3';
+const FILE_AUDIO = 'assets/guantanamo.mp3';
 
 function initAudio() {
   if (audioPlayer) {
@@ -72,3 +72,5 @@ function gestisciPrimoClick() {
 
 document.addEventListener('click', gestisciPrimoClick);
 document.addEventListener('touchstart', gestisciPrimoClick);
+
+window.toggleAudio = toggleAudio;

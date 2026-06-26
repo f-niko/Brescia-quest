@@ -5,6 +5,7 @@ let playerXP = 0;
 let playerLevel = 1;
 const xpPerLivello = 300;
 let map, userMarker;
+window.map = null;
 let markersAttivi = [];
 let categoriaCorrente = 'tutti';
 
@@ -88,6 +89,7 @@ function initGioco() {
     }
 
     map = L.map('map').setView([45.5415, 10.2012], 14);
+    window.map = map;
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '© OpenStreetMap'

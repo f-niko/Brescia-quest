@@ -12,8 +12,8 @@ window.apriSchermata = function(tipo) {
     loginBar.classList.add('visible');
     mapContainer.classList.add('with-login-bar');
     document.getElementById('filtri-nav').classList.remove('hidden');
-    if (typeof map !== 'undefined' && map && typeof map.invalidateSize === 'function') {
-      setTimeout(() => { map.invalidateSize(); }, 100);
+    if (typeof window.map !== 'undefined' && window.map && typeof window.map.invalidateSize === 'function') {
+      setTimeout(() => { window.map.invalidateSize(); }, 100);
     }
   } else {
     loginBar.classList.remove('visible');
