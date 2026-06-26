@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Brescia Quest - Il Gioco Esplorativo</title>
+  <title>Venatores Brixiae - Il Gioco Esplorativo</title>
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800;900&display=swap" rel="stylesheet">
@@ -711,7 +711,7 @@
   <div id="schermata-login" class="fixed inset-0 bg-[#0a0a0f] z-[999999] flex flex-col justify-center items-center p-6">
     <div class="login-box max-w-sm w-full p-8 rounded-3xl text-center animate-scaleIn">
       <div class="game-icon text-7xl mb-3">🎮</div>
-      <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">BRESCIA QUEST</h2>
+      <h2 class="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-yellow-600">VENATORES BRIXIAE</h2>
       <p id="login-subtitle" class="text-gray-400 text-xs mt-1 mb-6 font-medium tracking-wider">INIZIA LA TUA AVVENTURA URBANA</p>
 
       <div class="tab-container flex mb-6">
@@ -1502,7 +1502,7 @@ document.addEventListener('touchstart', gestisciPrimoClick);
 
     const UI_TRANSLATIONS = {
       it: {
-        title: 'Brescia Quest - Il Gioco Esplorativo',
+        title: 'Venatores Brixiae - Il Gioco Esplorativo',
         loginSubtitle: 'Inizia la tua avventura urbana',
         loginEmailLabel: 'Indirizzo Email',
         loginPasswordLabel: 'Password',
@@ -1592,7 +1592,7 @@ document.addEventListener('touchstart', gestisciPrimoClick);
         alertNoGps: 'Questo telefono o browser non supporta la geolocalizzazione.',
         lockedTitle: 'Luogo Bloccato',
         lockedBody: 'Avvicinati a meno di 50 metri con il GPS per conquistare questo obiettivo!',
-        condividiTesto: 'Unisciti alla mia squadra su Brescia Quest! 🎮 Usa il mio Codice Squadra per scalare la classifica insieme: ',
+        condividiTesto: 'Unisciti alla mia squadra su Venatores Brixiae! 🎮 Usa il mio Codice Squadra per scalare la classifica insieme: ',
         alertScriviMessaggio: 'Scrivi un messaggio prima di inviare!',
         alertErroreInvioMessaggio: '❌ Errore nell\'invio del messaggio.',
         alertCancellaTuttiMsg: '⚠️ ATTENZIONE: Sei sicuro di voler cancellare TUTTI i messaggi?',
@@ -1680,7 +1680,7 @@ document.addEventListener('touchstart', gestisciPrimoClick);
         clanDefaultNome: 'Clan'
       },
       en: {
-        title: 'Brescia Quest - The Exploratory Game',
+        title: 'Venatores Brixiae - The Exploratory Game',
         loginSubtitle: 'Start your urban adventure',
         loginEmailLabel: 'Email Address',
         loginPasswordLabel: 'Password',
@@ -1770,7 +1770,7 @@ document.addEventListener('touchstart', gestisciPrimoClick);
         alertNoGps: 'This device or browser does not support geolocation.',
         lockedTitle: 'Location Locked',
         lockedBody: 'Get within 50 meters using GPS to conquer this objective!',
-        condividiTesto: 'Join my team on Brescia Quest! 🎮 Use my Team Code to climb the leaderboard together: ',
+        condividiTesto: 'Join my team on Venatores Brixiae! 🎮 Use my Team Code to climb the leaderboard together: ',
         alertScriviMessaggio: 'Write a message before sending!',
         alertErroreInvioMessaggio: '❌ Error sending message.',
         alertCancellaTuttiMsg: '⚠️ WARNING: Are you sure you want to delete ALL messages?',
@@ -2447,7 +2447,7 @@ document.addEventListener('touchstart', gestisciPrimoClick);
 
       if (navigator.share) {
         navigator.share({
-          title: 'Brescia Quest',
+          title: 'Venatores Brixiae',
           text: testoCondivisione
         }).catch(console.error);
       } else {
@@ -2854,13 +2854,13 @@ document.addEventListener('touchstart', gestisciPrimoClick);
 
     const TUTORIAL_STEPS = {
       it: [
-        { icon: '🗺️', title: 'Benvenuto a Brescia Quest!', desc: 'Esplora la città di Brescia attraverso la mappa interattiva. Scopri monumenti, parchi e supermercati per guadagnare XP e salire di livello!' },
+        { icon: '🗺️', title: 'Benvenuto a Venatores Brixiae!', desc: 'Esplora la città di Brescia attraverso la mappa interattiva. Scopri monumenti, parchi e supermercati per guadagnare XP e salire di livello!' },
         { icon: '📍', title: 'Scopri i Luoghi', desc: 'Avvicinati a un luogo sulla mappa (entro 50 metri) per conquistarlo! Ogni luogo scoperto ti regala +100 XP e sblocca badge speciali.' },
         { icon: '👥', title: 'Amici e Chat Live', desc: 'Aggiungi amici con il tuo Codice Amico unico. Chatta con loro in tempo reale e confronta i punteggi nella classifica!' },
         { icon: '🛡️', title: 'Crea o Unisciti a un Clan', desc: 'Fonda il tuo clan o entra in uno esistente. Collabora con altri giocatori, chatta nel gruppo e scalate la classifica insieme!' }
       ],
       en: [
-        { icon: '🗺️', title: 'Welcome to Brescia Quest!', desc: 'Explore the city of Brescia through the interactive map. Discover monuments, parks, and supermarkets to earn XP and level up!' },
+        { icon: '🗺️', title: 'Welcome to Venatores Brixiae!', desc: 'Explore the city of Brescia through the interactive map. Discover monuments, parks, and supermarkets to earn XP and level up!' },
         { icon: '📍', title: 'Discover Places', desc: 'Get within 50 meters of a place on the map to conquer it! Each discovery gives you +100 XP and unlocks special badges.' },
         { icon: '👥', title: 'Friends & Live Chat', desc: 'Add friends using your unique Friend Code. Chat with them in real time and compare scores on the leaderboard!' },
         { icon: '🛡️', title: 'Create or Join a Clan', desc: 'Found your own clan or join an existing one. Collaborate with other players, chat in the group, and climb the ranks together!' }
@@ -3625,7 +3625,7 @@ document.addEventListener('touchstart', gestisciPrimoClick);
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.inviaMessaggioClan?.(); }
     });
 
-    console.log("✅ Brescia Quest - Sistema Badge + Amici + Clan + Tutorial + Musica attivo!");
+    console.log("✅ Venatores Brixiae - Sistema Badge + Amici + Clan + Tutorial + Musica attivo!");
     console.log("🎵 Musica: guantanamo.mp3 in riproduzione!");
     console.log("🏅 Badge: schermata intera nativa con sfondo scuro e griglia 3 colonne!");
     console.log("👥 Amici: chat privata e classifica");
