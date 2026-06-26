@@ -3618,6 +3618,13 @@ document.addEventListener('touchstart', gestisciPrimoClick);
       }
     };
 
+    document.getElementById('input-messaggio-chat')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.inviaMessaggioChat?.(); }
+    });
+    document.getElementById('input-messaggio-clan')?.addEventListener('keydown', e => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); window.inviaMessaggioClan?.(); }
+    });
+
     console.log("✅ Brescia Quest - Sistema Badge + Amici + Clan + Tutorial + Musica attivo!");
     console.log("🎵 Musica: guantanamo.mp3 in riproduzione!");
     console.log("🏅 Badge: schermata intera nativa con sfondo scuro e griglia 3 colonne!");
