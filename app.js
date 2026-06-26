@@ -1,4 +1,6 @@
-// --- VARIABILI DI STATO DEL GIOCO ---
+// ============================================
+// VARIABILI DI STATO DEL GIOCO
+// ============================================
 let playerXP = 0;
 let playerLevel = 1;
 const xpPerLivello = 300;
@@ -70,9 +72,10 @@ document.addEventListener('click', (e) => {
   }
 });
 
-// --- INIZIALIZZAZIONE DEL GIOCO ---
+// ============================================
+// INIZIALIZZAZIONE DEL GIOCO
+// ============================================
 function initGioco() {
-    // CONTROLLO DI SICUREZZA: Se la mappa è già stata creata, si ferma ed evita l'errore!
     if (map) {
         console.log("Mappa già inizializzata. Salto la ricreazione.");
         aggiornaMappaELista();
@@ -93,7 +96,6 @@ function initGioco() {
     aggiornaMappaELista();
     attivaGPS({ enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
 
-    // Forza Leaflet a ridisegnare i tasselli grafici evitando quadrati grigi
     setTimeout(() => {
         if (map && typeof map.invalidateSize === 'function') {
             map.invalidateSize();
@@ -101,28 +103,29 @@ function initGioco() {
     }, 200);
 }
 
+window.initGioco = initGioco;
+
+// ============================================
+// GESTIONE DEI FILTRI E DEI PIN
+// ============================================
 function aggiornaMappaELista() {
     if (!map || typeof monumenti === 'undefined') return;
 
-    // Svuota i marker precedenti
     markersAttivi.forEach(m => map.removeLayer(m));
     markersAttivi = [];
 
-    // Aggiorna sia la mappa che la lista grafica laterale
     aggiornaWishlist();
     aggiornaWishlistFull();
 
-    // Disegno dei marker sulla mappa
     monumenti.forEach(m => {
         if (categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente) {
             
-            // Creiamo un CircleMarker stilizzato per uniformità visiva del gioco
             const marker = L.circleMarker([m.lat, m.lng], {
-              radius: 10, // 10 pixels on screen
-              fillColor: m.scoperto ? '#10b981' : '#ef4444',
-              color: '#fff',
-              fillOpacity: 0.9,
-              weight: 2
+                radius: 10,
+                fillColor: m.scoperto ? '#10b981' : '#ef4444',
+                color: '#fff',
+                fillOpacity: 0.9,
+                weight: 2
             }).addTo(map);
             
             if (m.scoperto) {
@@ -132,24 +135,26 @@ function aggiornaMappaELista() {
             }
             
             markersAttivi.push(marker);
-            m.markerRef = marker; // Salviamo il riferimento per aprirlo dinamicamente allo sblocco
+            m.markerRef = marker;
         }
     });
 
-    // FIX DEFINITIVO: Raggruppa i marker e aspetta che il CSS della mappa sia caricato
     if (markersAttivi.length > 0) {
         const markerGroup = L.featureGroup(markersAttivi);
-        
-        // Aspettiamo 250ms per far calcolare al browser l'altezza del div #map
         setTimeout(() => {
             map.fitBounds(markerGroup.getBounds(), { 
-                padding: [40, 40], // Margine per non attaccare i pin ai bordi
-                maxZoom: 16 // Previene zoom eccessivi se filtri una categoria con 1 solo pin
+                padding: [40, 40],
+                maxZoom: 16
             });
         }, 250);
     }
 }
 
+window.aggiornaMappaELista = aggiornaMappaELista;
+
+// ============================================
+// AGGIORNAMENTO WISHLIST
+// ============================================
 function aggiornaWishlist() {
     const containerLista = document.getElementById('lista-monumenti');
     if (!containerLista) return;
@@ -159,7 +164,6 @@ function aggiornaWishlist() {
         return;
     }
 
-    // Filtriamo i luoghi in base alla categoria corrente
     const monumentiFiltrati = monumenti.filter(m => categoriaCorrente === 'tutti' || m.categoria === categoriaCorrente);
     
     if (monumentiFiltrati.length === 0) {
@@ -167,7 +171,6 @@ function aggiornaWishlist() {
         return;
     }
 
-    // Se controlliamo globalmente i non scoperti e l'utente ha esplorato tutto il database
     const daScoprireGlobali = monumenti.filter(m => !m.scoperto);
     if (daScoprireGlobali.length === 0 && categoriaCorrente === 'tutti') {
         containerLista.innerHTML = "<p class='text-yellow-400 text-xs text-center font-bold py-4'>🎉 Hai esplorato tutti i luoghi di Brescia! Ottimo lavoro!</p>";
@@ -176,9 +179,8 @@ function aggiornaWishlist() {
 
     containerLista.innerHTML = ""; 
     monumentiFiltrati.forEach(m => {
-        const item = document.createElement('div');
-        // Creiamo un ID univoco pulito per aggiornare i metri in real-time senza ricaricare l'intera lista dom
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
+        const item = document.createElement('div');
         item.id = `monumento-${safeId}`;
         item.className = `p-3 rounded-xl flex justify-between items-center transition-all bg-gray-800 border border-gray-700 shadow-md ${
             m.scoperto ? 'bg-green-950/40 border-green-500' : 'bg-gray-700/50 border-gray-600'
@@ -198,6 +200,9 @@ function aggiornaWishlist() {
     });
 }
 
+// ============================================
+// AGGIORNAMENTO WISHLIST FULL
+// ============================================
 function aggiornaWishlistFull() {
     const container = document.getElementById('lista-monumenti-full');
     if (!container) return;
@@ -208,8 +213,6 @@ function aggiornaWishlistFull() {
     }
 
     let monumentiFiltrati = monumenti;
-    
-    // Recupera il filtro selezionato nel dropdown della wishlist full
     const dropdownFiltro = document.getElementById('filtro-wishlist');
     if (dropdownFiltro) {
         const filtroSelezionato = dropdownFiltro.value;
@@ -231,8 +234,8 @@ function aggiornaWishlistFull() {
 
     container.innerHTML = "";
     monumentiFiltrati.forEach(m => {
-        const item = document.createElement('div');
         const safeId = m.nome.replace(/[^a-zA-Z0-9]/g, '-');
+        const item = document.createElement('div');
         item.id = `monumento-full-${safeId}`;
         item.className = `p-3 rounded-xl flex justify-between items-center transition-all bg-gray-800 border ${
             m.scoperto ? 'bg-green-950/40 border-green-500' : 'bg-gray-700/50 border-gray-600'
@@ -252,17 +255,18 @@ function aggiornaWishlistFull() {
     });
 }
 
-// --- FUNZIONE FILTRA CATEGORIA VIA NAVBAR ---
+window.aggiornaWishlistFull = aggiornaWishlistFull;
+
+// ============================================
+// FUNZIONE FILTRA CATEGORIA
+// ============================================
 function filtraCategoria(categoria) {
     categoriaCorrente = categoria;
     
     const classiContorno = ['outline-3', 'outline-yellow-400'];
     const pulsanti = document.querySelectorAll('#filtri-nav button');
-    
-    // Rimuove il contorno da tutti i pulsanti della navbar per resettarli
     pulsanti.forEach(btn => btn.classList.remove(...classiContorno));
 
-    // CORREZIONE INTELLIGENTE: Se i bottoni non hanno un ID esatto, trova quello col comando associato
     const pulsanteAttivo = document.getElementById(`btn-filtro-${categoria}`) || 
                            Array.from(pulsanti).find(btn => btn.getAttribute('onclick')?.includes(`'${categoria}'`));
                            
@@ -270,11 +274,13 @@ function filtraCategoria(categoria) {
         pulsanteAttivo.classList.add(...classiContorno);
     }
 
-    aggiornaMappaELista(categoria);
+    aggiornaMappaELista();
 }
 window.filtraCategoria = filtraCategoria;
 
-// --- SISTEMA GPS CON MOVIMENTO FLUIDO ---
+// ============================================
+// SISTEMA GPS CON MOVIMENTO FLUIDO
+// ============================================
 function attivaGPS(options) {
     if (navigator.geolocation) {
         navigator.geolocation.watchPosition(
@@ -290,7 +296,6 @@ function attivaGPS(options) {
                         fillOpacity: 0.9,
                         weight: 3
                     }).addTo(map);
-                    
                     map.setView([uLat, uLng], 16);
                 } else {
                     posizioneTarget = { lat: uLat, lng: uLng };
@@ -309,12 +314,15 @@ function attivaGPS(options) {
         alert("Questo telefono o browser non supporta la geolocalizzazione.");
     }
 }
+window.attivaGPS = attivaGPS;
 
+// ============================================
+// ANIMAZIONE AVATAR
+// ============================================
 function animaAvatar() {
     if (!posizioneTarget || !userMarker) return;
 
     const posAttuale = userMarker.getLatLng();
-    
     const diffLat = posizioneTarget.lat - posAttuale.lat;
     const diffLng = posizioneTarget.lng - posAttuale.lng;
     const fattoreFluidita = 0.05;
@@ -325,15 +333,16 @@ function animaAvatar() {
     } else {
         const nuovaLat = posAttuale.lat + (diffLat * fattoreFluidita);
         const nuovaLng = posAttuale.lng + (diffLng * fattoreFluidita);
-        
         userMarker.setLatLng([nuovaLat, nuovaLng]);
         animazioneInCorso = requestAnimationFrame(animaAvatar);
     }
 }
 
-// --- FORMULA HAVERSINE MATEMATICA PRECISA ---
+// ============================================
+// FORMULA HAVERSINE
+// ============================================
 function calcolaDistanza(lat1, lon1, lat2, lon2) {
-    const R = 6371e3; // Raggio della terra in metri
+    const R = 6371e3;
     const phi1 = lat1 * Math.PI / 180;
     const phi2 = lat2 * Math.PI / 180;
     const deltaPhi = (lat2 - lat1) * Math.PI / 180;
@@ -344,14 +353,14 @@ function calcolaDistanza(lat1, lon1, lat2, lon2) {
               Math.sin(deltaLambda / 2) * Math.sin(deltaLambda / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return R * c; // Distanza finale espressa in metri
+    return R * c;
 }
 
-// --- LOGICA DI GIOCO: CONTROLLO VICINANZA E SBLOCCO ---
+// ============================================
+// CONTROLLO PROSSIMITÀ E SBLOCCO
+// ============================================
 function controllaProssimita(uLat, uLng) {
     if (typeof monumenti === 'undefined') return;
-
-    document.title = "Venatores Brixiae"; // Assicura stabilità titolo
 
     monumenti.forEach(m => {
         const distanza = calcolaDistanza(uLat, uLng, m.lat, m.lng);
@@ -360,7 +369,6 @@ function controllaProssimita(uLat, uLng) {
         const rigaElementoFull = document.getElementById(`monumento-full-${safeId}`);
 
         if (!m.scoperto) {
-            // Se l'elemento è renderizzato nella wishlist laterale, aggiorna dinamicamente i metri in tempo reale
             if (rigaElemento) {
                 const labelDistanza = rigaElemento.querySelector('.label-distanza');
                 if (labelDistanza) labelDistanza.innerText = `📍 Distanza: ${Math.round(distanza)} metri`;
@@ -370,40 +378,40 @@ function controllaProssimita(uLat, uLng) {
                 if (labelDistanzaFull) labelDistanzaFull.innerText = `📍 Distanza: ${Math.round(distanza)} metri`;
             }
 
-            // Sblocco effettivo se l'utente scende sotto i 50 metri dal target
             if (distanza <= 50) {
                 m.scoperto = true;
                 
-                // 🎵 RIPRODUCI JINGLE TRIONFALE!
                 if (typeof window.playJingleMonumento === 'function') {
                     window.playJingleMonumento();
                 }
                 
-                // Aggiorna marker sulla mappa in tempo reale
                 if (m.markerRef) {
-                    m.markerRef.setStyle({ fillColor: '#10b981' }); // Diventa verde istantaneamente
+                    m.markerRef.setStyle({ fillColor: '#10b981' });
                     m.markerRef.bindPopup(`<b>${m.nome}</b><br>${m.desc}`).openPopup();
                 }
 
-                // Gestione punti esperienza e passaggio livello
                 assegnaXP(100);
-
-                // Carica il luogo scoperto nella coda dei popup gestiti in sequenza asincrona
-                codaPopup.push(m);
                 
-                // Ricarica la grafica della lista
-                aggiornaMappaELista(categoriaCorrente);
+                // 🔥 CONTROLLO BADGE
+                if (typeof window.controllaESbloccaBadge === 'function') {
+                    window.controllaESbloccaBadge(m, monumenti);
+                }
+
+                codaPopup.push(m);
+                aggiornaMappaELista();
             }
         }
     });
 
-    // Controllo se è possibile consumare e mostrare subito il primo popup in coda
     const popupElement = document.getElementById('popup-scoperta');
     if (codaPopup.length > 0 && popupElement && popupElement.classList.contains('hidden')) {
         mostraPopupScoperta(codaPopup[0]);
     }
 }
 
+// ============================================
+// ASSEGNAZIONE XP
+// ============================================
 function assegnaXP(punti) {
     playerXP += punti;
     while (playerXP >= xpPerLivello) {
@@ -411,7 +419,6 @@ function assegnaXP(punti) {
         playerXP -= xpPerLivello;
     }
 
-    // Sincronizzazione immediata dei nodi DOM dell'interfaccia utente (Header/Profilo)
     const xpTxt = document.getElementById('xp-txt');
     const lvlTxt = document.getElementById('livello-txt');
     const xpBar = document.getElementById('xp-bar');
@@ -420,12 +427,14 @@ function assegnaXP(punti) {
     if (lvlTxt) lvlTxt.innerText = playerLevel;
     if (xpBar) xpBar.style.width = `${(playerXP / xpPerLivello) * 100}%`;
 
-    // Richiesta di salvataggio remoto asincrono su cloud database Firebase
     if (typeof window.salvaProgressoSuCloud === 'function') {
         window.salvaProgressoSuCloud(playerXP, playerLevel, monumenti);
     }
 }
 
+// ============================================
+// MOSTRA POPUP SCOPERTA
+// ============================================
 function mostraPopupScoperta(m) {
     const nomeEl = document.getElementById('popup-nome');
     const descEl = document.getElementById('popup-desc');
@@ -436,15 +445,13 @@ function mostraPopupScoperta(m) {
     if (popupEl) popupEl.classList.remove('hidden');
 }
 
-// --- FUNZIONE PER CHIUDERE IL POPUP DI SBLOCCO (GESTIONE IN CODA) ---
+// ============================================
+// CHIUDI POPUP (GESTIONE IN CODA)
+// ============================================
 window.chiudiPopup = function() {
     const popupEl = document.getElementById('popup-scoperta');
     if (popupEl) popupEl.classList.add('hidden');
-    
-    // Rimuove l'elemento appena visto dalla testa dell'array
     codaPopup.shift();
-    
-    // Se ci sono altri elementi bloccati nello stesso ciclo GPS, mostra il successivo dopo un leggero delay
     if (codaPopup.length > 0) {
         setTimeout(() => {
             const prossimoPopup = document.getElementById('popup-scoperta');
@@ -454,3 +461,164 @@ window.chiudiPopup = function() {
         }, 250);
     }
 };
+
+// ============================================
+// 🏅 SISTEMA BADGE COMPLETO
+// ============================================
+
+// 1. Definizione della lista dei badge nel gioco
+const LISTA_BADGE_GIOCO = [
+    // Badge basati sul numero totale di posti scoperti
+    { id: 'scopritore_1', nome: 'Esploratore', icona: '🧭', tipo: 'quantita', requisito: 1, desc: 'Scopri 1 monumento' },
+    { id: 'scopritore_3', nome: 'Curioso', icona: '🔍', tipo: 'quantita', requisito: 3, desc: 'Scopri 3 monumenti' },
+    { id: 'scopritore_5', nome: 'Cacciatore Urbano', icona: '🦅', tipo: 'quantita', requisito: 5, desc: 'Scopri 5 monumenti' },
+    { id: 'scopritore_10', nome: 'Veterano', icona: '⚔️', tipo: 'quantita', requisito: 10, desc: 'Scopri 10 monumenti' },
+    { id: 'scopritore_15', nome: 'Leggenda', icona: '👑', tipo: 'quantita', requisito: 15, desc: 'Scopri 15 monumenti' },
+    
+    // Badge basati sul completamento di intere categorie
+    { id: 'cat_parchi', nome: 'Pollice Verde', icona: '🌳', tipo: 'categoria', requisito: 'Parco', desc: 'Scopri tutti i parchi' },
+    { id: 'cat_monumenti', nome: 'Custode', icona: '🏛️', tipo: 'categoria', requisito: 'Monumento', desc: 'Scopri tutti i monumenti' },
+    { id: 'cat_supermercati', nome: 'Shoppaholic', icona: '🛒', tipo: 'categoria', requisito: 'Supermercato', desc: 'Scopri tutti i supermercati' }
+];
+
+/**
+ * Genera graficamente i badge nella schermata profilo
+ */
+window.aggiornaGrigliaBadgeProfilo = function() {
+    const griglia = document.getElementById('griglia-badge-profilo');
+    if (!griglia) return;
+
+    // Carica lo stato attuale salvato
+    let badgeSbloccati = [];
+    try {
+        const saved = localStorage.getItem('utenteBadgeStato');
+        if (saved) {
+            const data = JSON.parse(saved);
+            badgeSbloccati = data.badgeSbloccati || [];
+        }
+    } catch(e) {}
+
+    griglia.innerHTML = '';
+
+    LISTA_BADGE_GIOCO.forEach(badge => {
+        const isSbloccato = badgeSbloccati.includes(badge.id);
+        const item = document.createElement('div');
+        
+        // Classi CSS condizionali: se sbloccato è colorato e cliccabile, altrimenti opaco e grigio
+        item.className = `p-2 rounded-xl border flex flex-col items-center justify-center text-center transition-all duration-200 ${
+            isSbloccato 
+                ? 'bg-yellow-500/10 border-yellow-500/40 cursor-pointer hover:scale-105 hover:bg-yellow-500/20 shadow-sm shadow-yellow-500/5' 
+                : 'bg-black/20 border-white/5 opacity-25 filter grayscale cursor-not-allowed'
+        }`;
+        
+        item.title = `${badge.nome}: ${badge.desc} (${isSbloccato ? 'Sbloccato' : 'Bloccato'})`;
+        
+        item.innerHTML = `
+            <span class="text-2xl mb-1">${badge.icona}</span>
+            <span class="text-[9px] font-bold text-gray-300 block truncate w-full uppercase">${badge.nome}</span>
+        `;
+
+        // Se sbloccato, aggiungi l'evento click per impostarlo come foto profilo
+        if (isSbloccato) {
+            item.addEventListener('click', function() {
+                if (typeof window.playClickSuono === 'function') window.playClickSuono();
+                
+                // 1. Aggiorna l'avatar nella barra di login superiore
+                const avatarBar = document.getElementById('avatar-login-bar');
+                if (avatarBar) avatarBar.innerHTML = `<span class="text-2xl">${badge.icona}</span>`;
+                
+                // 2. Aggiorna la preview dell'avatar nel popup profilo principale
+                const preview = document.getElementById('edit-avatar-preview');
+                if (preview) preview.innerHTML = `<span class="text-3xl">${badge.icona}</span>`;
+                
+                // 3. Salva la scelta dell'avatar nel localStorage senza perdere gli altri dati
+                try {
+                    const saved = localStorage.getItem('utenteBadgeStato');
+                    let data = saved ? JSON.parse(saved) : { badgeSbloccati: badgeSbloccati, monumentiScoperti: [] };
+                    data.badgeProfiloAttivo = badge.icona;
+                    localStorage.setItem('utenteBadgeStato', JSON.stringify(data));
+                } catch(e) {}
+
+                // Animazione temporanea di successo (bordo verde) sul badge cliccato
+                item.style.borderColor = '#4ade80';
+                setTimeout(() => { item.style.borderColor = 'rgba(234, 179, 8, 0.4)'; }, 1000);
+            });
+        }
+
+        griglia.appendChild(item);
+    });
+};
+
+/**
+ * Controlla se i requisiti dei badge sono soddisfatti e salva lo stato.
+ * Chiamala subito dopo che l'utente sblocca con successo un monumento sulla mappa.
+ */
+window.controllaESbloccaBadge = function(ultimoMonumentoScoperto, tuttiIMonumenti) {
+    if (!ultimoMonumentoScoperto) return;
+    
+    let badgeSbloccati = [];
+    let monumentiScoperti = [];
+    let badgeProfiloAttivo = '🧭';
+
+    try {
+        const saved = localStorage.getItem('utenteBadgeStato');
+        if (saved) {
+            const data = JSON.parse(saved);
+            badgeSbloccati = data.badgeSbloccati || [];
+            monumentiScoperti = data.monumentiScoperti || [];
+            badgeProfiloAttivo = data.badgeProfiloAttivo || '🧭';
+        }
+    } catch(e) {}
+    
+    // Aggiungi il nuovo monumento salvando il suo ID se non c'era già
+    if (!monumentiScoperti.includes(ultimoMonumentoScoperto.id)) {
+        monumentiScoperti.push(ultimoMonumentoScoperto.id);
+    }
+
+    const totaleScoperti = monumentiScoperti.length;
+    let nuoviBadgeSbloccatiAdesso = [];
+
+    // Verifica i requisiti per ogni badge esistente
+    LISTA_BADGE_GIOCO.forEach(badge => {
+        if (badgeSbloccati.includes(badge.id)) return; // Salta se già sbloccato
+        
+        let sbloccato = false;
+        if (badge.tipo === 'quantita') {
+            if (totaleScoperti >= badge.requisito) sbloccato = true;
+        } else if (badge.tipo === 'categoria') {
+            const inCat = tuttiIMonumenti.filter(m => m.categoria === badge.requisito);
+            const scopertiInCat = inCat.every(m => monumentiScoperti.includes(m.id));
+            if (scopertiInCat && inCat.length > 0) sbloccato = true;
+        }
+
+        if (sbloccato) {
+            badgeSbloccati.push(badge.id);
+            nuoviBadgeSbloccatiAdesso.push(badge);
+        }
+    });
+
+    // Salva i dati aggiornati
+    localStorage.setItem('utenteBadgeStato', JSON.stringify({
+        badgeSbloccati: badgeSbloccati,
+        monumentiScoperti: monumentiScoperti,
+        badgeProfiloAttivo: badgeProfiloAttivo
+    }));
+
+    // Notifica a schermo e aggiornamento immediato della griglia
+    window.aggiornaGrigliaBadgeProfilo();
+
+    nuoviBadgeSbloccatiAdesso.forEach(badge => {
+        if (typeof window.playJingleMonumento === 'function') window.playJingleMonumento();
+        setTimeout(() => {
+            alert(`🏅 TRAGUARDO SBLOCCATO!\nHai ottenuto il badge: ${badge.icona} ${badge.nome}\n"${badge.desc}"`);
+        }, 500);
+    });
+};
+
+// Esegui il disegno iniziale della griglia non appena la pagina finisce di caricare
+document.addEventListener('DOMContentLoaded', () => {
+    window.aggiornaGrigliaBadgeProfilo();
+});
+
+console.log("✅ app.js caricato correttamente!");
+console.log("🎮 Brescia Quest - Sistema audio + Badge attivo!");
